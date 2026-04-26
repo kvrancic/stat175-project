@@ -46,35 +46,131 @@ much we lose by constraining ourselves to enforceable rules.
 \label{sec:intro}
 
 \paragraph{Scientific question.}
-Given a social contact graph in which vertices carry feature
+\emph{Given a social contact graph in which vertices carry feature
 information and edges carry costs derived from endpoint feature
 similarity, what is the minimum-cost set of edges whose removal keeps
-the steady-state SIS prevalence below a fixed threshold?
+the steady-state SIS prevalence below a fixed threshold?}
 
-\paragraph{Why this framing.}
-% [DRAFT] Motivate the cost-aware reframe over the cardinality-only
-% formulation, citing Austern's edge-removal-with-costs guidance and
-% useful-readings-A.md sec 3 on NetMelt / GreedyWalk.
+\paragraph{Motivation for the cost-aware reframe.}
+The classical literature on epidemic containment via network
+modification studies the \emph{cardinality} version of this problem:
+remove the minimum number of edges, or equivalently the maximum-impact
+$k$ edges, such that the residual graph's spectral radius drops below
+the epidemic threshold $\tau_c = 1/\lambda_1(A)$
+\citep{wang2003threshold,tong2012netmelt,saha2015greedywalk}. The
+cardinality formulation treats every edge as identical. In real social
+graphs this is unrealistic: cutting the friendship between two
+roommates is socially much costlier than cutting an acquaintance tie
+across a campus. A containment policy that ignores this asymmetry is
+either practically impossible to deploy (it severs critical ties) or
+underutilizes cheap interventions (it misses harmless cuts that would
+still bend the curve). The cost-aware reframe takes node features as
+input, derives a per-edge cost from those features, and minimizes the
+total cost of the edges removed subject to a containment constraint.
 
 \paragraph{Contributions.}
-% [DRAFT] Three bullets:
-% 1. End-to-end Pareto-frontier comparison of the four policies on five
-%    Facebook100 campuses.
-% 2. Novel GNN-induced cost function that converts node-attribute
-%    homophily into a learned per-edge cost.
-% 3. Implementability analysis: explicit gap between ideal (GNN) and
-%    realistic (community-distance) policies.
+\begin{enumerate}[leftmargin=2em]
+    \item An end-to-end empirical comparison of four edge-removal
+    policies (random, edge betweenness over cost, a Louvain-induced
+    community-distance threshold, and a GNN-learned cost policy) on
+    five Facebook100 campuses chosen for diversity in clustering
+    coefficient.
+    \item A graph neural network policy whose per-edge cost
+    $c_e^{\textsc{gnn}} = \sigma(\langle z_u, z_v\rangle)$ is
+    \emph{learned} from a self-supervised link-prediction objective on
+    the friendship graph itself. The GNN converts attribute-driven
+    homophily into a continuous cost surface, and the learned cost is
+    combined with NetMelt-style spectral edge importance into a
+    single bang-for-buck score.
+    \item An implementability analysis: we report the gap between the
+    ideal policy (GNN over cost) and a realistic, enforceable policy
+    (community-distance threshold), under both perfect and imperfect
+    compliance.
+    \item Three robustness panels (SIR alternative, $80\%$
+    compliance, adversarial top-eigenvector seeding) and three
+    ablations (GNN architecture, cost function, synthetic graph
+    topology) that characterize \emph{when} each policy wins.
+\end{enumerate}
 
 \section{Background}
 \label{sec:background}
 
 \subsection{Graph and SIS dynamics}
-% [DRAFT] G = (V, E), n=|V|, m=|E|. Stochastic SIS: S->I w.p. 1 - (1-beta)^k, I->S w.p. gamma.
-% Spectral threshold tau_c = 1/lambda_1(A) (Wang et al. 2003).
 
-\subsection{Cost-aware edge removal as an optimization problem}
-% [DRAFT] minimize sum_e in S c_e s.t. Outcome(G \ S) <= tau, with the
-% sigmoid-dot proxy and L2-normalized features.
+Let $G = (V, E)$ be an undirected graph with $n = |V|$ vertices and
+$m = |E|$ edges, and let $A \in \{0, 1\}^{n \times n}$ be its
+adjacency matrix. Each vertex $v \in V$ carries a feature vector
+$x_v \in \mathbb{R}^d$ (in our case the L2-normalized one-hot
+encoding of seven Facebook100 attributes). At each discrete time
+step, every infected node infects each susceptible neighbor
+independently with probability $\beta$ per edge, and recovers (back
+to susceptible) with probability $\gamma$. Equivalently, a
+susceptible vertex with $k$ infected neighbors becomes infected
+with probability $1 - (1 - \beta)^k$.
+
+The SIS model has a phase transition governed by the leading
+eigenvalue of $A$. \citet{wang2003threshold} showed that the
+quenched mean-field epidemic threshold is
+\[
+    \tau_c = \frac{1}{\lambda_1(A)}.
+\]
+For $\beta/\gamma < \tau_c$ the epidemic dies out almost surely; for
+$\beta/\gamma > \tau_c$ a positive-prevalence endemic state
+persists. Controlling the leading eigenvalue therefore controls
+containment: removing edges that contribute most to $\lambda_1(A)$
+is the classical recipe for raising $\tau_c$ above $\beta/\gamma$.
+
+We work in the stochastic (per-vertex Bernoulli) version of SIS and
+define our primary outcome as the time-averaged
+\emph{steady-state prevalence}: the fraction of infected vertices
+averaged over a post-burn-in window of the simulation.
+
+\subsection{Cost-aware edge removal as a constrained optimization
+problem}
+
+Let $c : E \to \mathbb{R}_{\geq 0}$ be a per-edge cost function. For
+any subset $S \subseteq E$ define the total cost
+$C(S) = \sum_{e \in S} c_e$ and write $G \setminus S$ for the
+residual graph after removing the edges in $S$. Let
+$\textrm{Outcome}(G_S)$ be the steady-state prevalence of an SIS
+process on $G \setminus S$ at fixed $(\beta, \gamma)$. The
+constrained optimization problem we study is
+\[
+    \min_{S \subseteq E} \quad C(S)
+    \qquad \textrm{s.t.} \quad
+    \textrm{Outcome}(G \setminus S) \le \tau,
+\]
+or equivalently in budgeted form
+\[
+    \min_{S \subseteq E} \quad \textrm{Outcome}(G \setminus S)
+    \qquad \textrm{s.t.} \quad
+    C(S) \le B,
+\]
+where $\tau$ is a containment target and $B$ a cost budget. We sweep
+$B$ over a logarithmic grid and report the implied Pareto frontier.
+This is a generalization of the cardinality formulation of
+\citet{tong2012netmelt} and \citet{saha2015greedywalk}; the
+non-uniform costs are what make the problem genuinely cost-aware.
+
+\subsection{The cost proxy}
+\label{sec:cost-proxy}
+
+We follow our advisor's suggestion and the social network analysis
+literature on homophily \citep{newman2002assortative,
+rizi2025homophily} in defining the per-edge cost as a smooth
+function of endpoint feature similarity:
+\[
+    c_e \;=\; \sigma\!\left(\langle x_u, x_v\rangle\right),
+\]
+with $x_u, x_v$ the L2-normalized one-hot feature vectors of edge
+$e = (u, v)$ and $\sigma(\cdot)$ the logistic sigmoid. Edges between
+nodes with strongly aligned attribute profiles (same dorm, same
+year, same major) inherit a high cost; edges between dissimilar
+nodes are cheap. The L2 normalization ensures
+$\langle x_u, x_v \rangle \in [0, 1]$, so $c_e \in
+[\tfrac{1}{2}, \sigma(1)] \approx [0.5, 0.73]$. The cost function's
+limited dynamic range is a known limitation that we address in the
+ablation in Section~\ref{sec:results}.
 
 \section{Related work}
 \label{sec:related}
@@ -91,19 +187,111 @@ the steady-state SIS prevalence below a fixed threshold?
 \label{sec:methods}
 
 \subsection{Edge cost}
-% [DRAFT] L2-normalize one-hot of {dorm, year, major, gender, status,
-% high school}; missing-as-category. c_e = sigmoid(<x_u, x_v>).
+
+We L2-normalize the concatenated one-hot encoding of seven
+Facebook100 attributes per node (student/faculty status, gender,
+major, second major, dorm, year, high school) and treat missing
+values (coded $0$ in the dataset) as their own category to avoid
+biasing the encoding through imputation
+\citep{traud2012facebook100}. The primary per-edge cost is then
+$c_e = \sigma(\langle x_u, x_v\rangle)$ as defined in
+Section~\ref{sec:cost-proxy}. The robustness panel additionally
+considers (i) a uniform cost (recovering the cardinality
+formulation), (ii) cosine similarity rescaled to $[0, 1]$, (iii) a
+clipped raw dot product, and (iv) an oracle log-normal cost
+independent of features.
 
 \subsection{The four policies}
-% [DRAFT] random; betweenness/cost; distance threshold (Louvain meta-graph
-% hop distance / cost); GNN (link-prediction-trained GraphSAGE; cost =
-% sigmoid(<z_u, z_v>); score = NetMelt eigenscore u_i*u_j / cost).
+
+Every policy implements a uniform interface
+$P : (G_S, c, B) \to S \subseteq E$ that returns the indices of edges
+to remove given a residual graph, a cost vector, and a cost budget.
+
+\paragraph{Random edge removal.} The trivial baseline. Edges are
+drawn uniformly without replacement until the cumulative cost
+reaches~$B$.
+
+\paragraph{Edge betweenness over cost.} For each edge $e$ we
+compute its (approximate) betweenness centrality $b_e$ via Brandes'
+algorithm with $k = 300$ pivot sources \citep{tong2012netmelt}. We
+score each edge by $b_e / c_e$ and greedy-fill in descending score
+order until the budget is exhausted. Sampled betweenness is a
+documented approximation; the variance under different pivot draws
+is captured by the pinned random seed.
+
+\paragraph{Distance threshold (community-bubble cut).} Run Louvain
+\citep{blondel2008louvain} on the residual graph to obtain a
+partition. Build the community meta-graph whose nodes are
+communities and whose edges connect any pair of communities sharing
+at least one inter-community edge. For each original edge $(u, v)$
+with community labels $c_u, c_v$, define its meta-graph distance
+$d_{c_u, c_v}$ as the BFS hop count between the two communities
+(with $d = 0$ if $c_u = c_v$). Score each edge by
+$d_{c_u, c_v} / c_e$ and greedy-fill until budget. This is the
+realistic, enforceable form: a public-health intervention can in
+principle communicate "stay within your $k$-hop community bubble"
+to the population.
+
+\paragraph{GNN-learned cost (the novel contribution).} A 2-layer
+GraphSAGE encoder \citep{hamilton2017graphsage} produces 16-dim
+node embeddings $z_v$. Cost from learned space:
+$c_e^{\textsc{gnn}} = \sigma(\langle z_u, z_v\rangle)$. Structural
+impact is the NetMelt eigenscore $2 u_i u_j$, the first-order
+perturbation of $\lambda_1(A)$ when edge $(i, j)$ is removed, where
+$u$ is the leading eigenvector of $A$
+\citep{tong2012netmelt}. Edges are scored by
+$2 u_i u_j / c_e^{\textsc{gnn}}$ and greedy-filled until budget.
+
+The encoder is trained end-to-end via self-supervised link
+prediction: for each true edge we sample a random non-edge as a
+negative; the loss is binary cross-entropy on the logit
+$\langle z_u, z_v \rangle$. We project the high-dimensional one-hot
+features through a 64-component TruncatedSVD before the GraphSAGE
+layers so that per-epoch cost does not scale with the raw feature
+dimension. Training takes under 40 seconds total across the five
+campuses.
+
+The GNN policy's novelty is that the cost function itself is
+\emph{learned} from data rather than hand-designed; the training
+signal aligns the cost surface with the graph's homophily structure
+without ever consulting the SIS simulator.
 
 \section{Experimental setup}
 \label{sec:setup}
-% [DRAFT] 5 campuses, R0 grid {0.8, 1.5, 3.0, 6.0}, gamma=0.10,
-% n_realizations=50, n_steps=200, burn_in=100, budget grid
-% {0%, 0.5%, 1%, 2%, 5%, 10%, 20%, 40%}. Seeds pinned at 42.
+
+\paragraph{Datasets.} We use five Facebook100 campuses chosen for
+diversity in global clustering coefficient: Caltech36 (762 nodes),
+Bowdoin47 (2{,}250), Harvard1 (15{,}086), Penn94 (41{,}536), and
+Tennessee95 (16{,}977). Each network is restricted to its giant
+connected component before any analysis.
+
+\paragraph{Epidemic regime.} We fix $\gamma = 0.10$ and parameterize
+$\beta$ via the basic reproduction number
+$R_0 = \beta \lambda_1(A) / \gamma$ so that the regime is comparable
+across campuses of very different size. We sweep
+$R_0 \in \{0.8, 1.5, 3.0, 6.0\}$, which brackets the spectral
+threshold ($R_0 = 1$) and reaches into the strongly endemic regime.
+
+\paragraph{Simulation.} Each Pareto cell runs $N = 50$ stochastic
+SIS realizations of $200$ time steps each, with $10$ uniformly
+random initial-infected vertices per realization, and we discard
+the first $100$ steps as burn-in before time-averaging steady-state
+prevalence. Random seeds are pinned to $42$ throughout
+(\texttt{numpy}, \texttt{torch}, \texttt{python-louvain}, and the
+betweenness pivot sampler all derive from the same master seed).
+
+\paragraph{Budget grid.} For each cell we sweep the cost budget at
+$\{0\%, 0.5\%, 1\%, 2\%, 5\%, 10\%, 20\%, 40\%\}$ of the total cost,
+yielding a Pareto frontier of cost vs.\ steady-state prevalence per
+$(campus, R_0, policy)$.
+
+\paragraph{Reproducibility.} Every figure in this paper is
+regenerated by \texttt{python scripts/08\_make\_figures.py} from
+parquet result tables in \texttt{results/}; every parquet is
+produced by the corresponding numbered script. The full
+end-to-end pipeline from raw \texttt{.mat} download to final
+figures runs from a single command sequence documented in
+\texttt{README.md}.
 
 \section{Results}
 \label{sec:results}
