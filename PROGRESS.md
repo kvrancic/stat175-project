@@ -47,3 +47,21 @@ Each entry: ISO date · commit short SHA · 1-2 line summary · why · what's ne
   3. Each policy caches its expensive precompute keyed by `id(adjacency)`, so the Pareto sweep precomputes betweenness / Louvain / GNN embeddings + leading eigenvector ONCE per campus and reuses across (R0, budget) cells. On Harvard1 betweenness selection dropped from 91s to 0.06s on subsequent calls.
 - All 5 GNN encoders trained: Caltech36 AUROC=0.789, Bowdoin47=0.812, Harvard1=0.861, Penn94=0.789, Tennessee95=0.783.
 - What's next: launch `scripts/04_run_pareto.py` for the main Pareto frontier across all 5 campuses; commit the parquet result and the rendered figures.
+
+**M4 launch + side artifacts.**
+
+- Why: kicked off the full main Pareto experiment (N=50 SIS realizations × 5 campuses × 4 policies × 4 R0 × 8 budgets ≈ 8000 sims). Built the side artifacts that round out the v1: smoke-test suite, Streamlit demo, lightning-talk and `.tex` paper templates, results-summary script.
+- What's in: `tests/test_policies.py` + `tests/test_simulator.py` (9 tests, all green: each policy stays within budget, zero budget = empty selection, removed edges actually disappear; SIS recovers τ_c phase transition, monotone in R0). `presentation/lightning-talk.md` (5-min, 4-speaker transcript with `POPULATE_AFTER_M4` markers for the figure + numbers). `paper/main.tex` + `paper/refs.bib` (NeurIPS-style template + bibliography seeded with all anchor papers from `docs/useful-readings-A.md` and `docs/useful-readings-B.md`). `scripts/09_summarize_results.py` (turns the parquet into headline numbers the talk + paper can quote). `WARNINGS.md` ledger of every downscoping decision (GNN dims, SVD pre-projection, sampled betweenness, sigmoid_dot's narrow range).
+- Early Pareto signal (Caltech36 + Bowdoin47, 5% budget): GNN policy is dramatically better near the epidemic threshold (R0=1.5: GNN 3.5–5.8% vs other 3 policies at 6.3–9.3%); policies converge at higher R0. This is a "when does the learned cost help?" story for the discussion section.
+- Background runs in flight: `scripts/04_run_pareto.py` (parquet save target = `results/main_pareto.parquet`); a polling task watches that path and will surface a notification when it appears.
+
+**Suggested next-conversation entrypoint (post-compaction):** read this `PROGRESS.md`, `WARNINGS.md`, and `MEMORY.md`, then launch the secondary experiments in order:
+```bash
+python scripts/05_run_robustness.py        # M6
+python scripts/06_run_ablations.py         # M5
+python scripts/07_cross_campus_regression.py  # M7
+python scripts/09_summarize_results.py     # populate headline numbers
+python scripts/08_make_figures.py          # render every paper figure
+# Then update presentation/lightning-talk.md with real numbers (M9 finalization)
+# Then fill paper/main.tex sections (M11)
+```
