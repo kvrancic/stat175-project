@@ -1,0 +1,161 @@
+\documentclass{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{graphicx}
+\usepackage[round]{natbib}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{enumitem}
+
+\title{Cost-Constrained Edge Removal for Epidemic Containment on Social Networks:\\
+A Comparison of Heuristic and GNN-Learned Policies on Facebook100}
+
+\author{Karlo Vran\v{c}i\'{c}, Alec [Last], Jackson Webster, Ryan [Last]\\
+STAT 175 (Prof. Morgane Austern), Harvard University}
+
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We study cost-constrained epidemic containment on real social networks
+(Facebook100) under a stochastic Susceptible-Infected-Susceptible (SIS)
+model. Edge removal is the intervention modality and the cost of
+removing an edge is derived from the similarity of the two endpoints'
+feature vectors via a sigmoid-dot-product proxy. We compare four
+policies: random, edge betweenness over cost, a Louvain-community
+``distance threshold'' (the realistic implementable form), and a
+graph neural network (GNN) policy that learns node embeddings whose
+similarity is the per-edge cost.  We sweep cost budgets to recover
+Pareto frontiers of cost vs.\ steady-state prevalence on five
+Facebook100 campuses, run robustness panels (SIR alternative,
+imperfect compliance, adversarial seeding) and three ablations
+(GNN architecture, cost function, synthetic graph topology), and
+fit a cross-campus regression of policy AUC against descriptive
+graph statistics. We discuss when the GNN-learned cost beats the
+hand-designed cost, when classical betweenness suffices, and how
+much we lose by constraining ourselves to enforceable rules.
+\end{abstract}
+
+\section{Introduction}
+\label{sec:intro}
+
+\paragraph{Scientific question.}
+Given a social contact graph in which vertices carry feature
+information and edges carry costs derived from endpoint feature
+similarity, what is the minimum-cost set of edges whose removal keeps
+the steady-state SIS prevalence below a fixed threshold?
+
+\paragraph{Why this framing.}
+% [DRAFT] Motivate the cost-aware reframe over the cardinality-only
+% formulation, citing Austern's edge-removal-with-costs guidance and
+% useful-readings-A.md sec 3 on NetMelt / GreedyWalk.
+
+\paragraph{Contributions.}
+% [DRAFT] Three bullets:
+% 1. End-to-end Pareto-frontier comparison of the four policies on five
+%    Facebook100 campuses.
+% 2. Novel GNN-induced cost function that converts node-attribute
+%    homophily into a learned per-edge cost.
+% 3. Implementability analysis: explicit gap between ideal (GNN) and
+%    realistic (community-distance) policies.
+
+\section{Background}
+\label{sec:background}
+
+\subsection{Graph and SIS dynamics}
+% [DRAFT] G = (V, E), n=|V|, m=|E|. Stochastic SIS: S->I w.p. 1 - (1-beta)^k, I->S w.p. gamma.
+% Spectral threshold tau_c = 1/lambda_1(A) (Wang et al. 2003).
+
+\subsection{Cost-aware edge removal as an optimization problem}
+% [DRAFT] minimize sum_e in S c_e s.t. Outcome(G \ S) <= tau, with the
+% sigmoid-dot proxy and L2-normalized features.
+
+\section{Related work}
+\label{sec:related}
+% [DRAFT] Anchor papers from useful-readings-A.md sec 3 (Tong/NetMelt
+% 2012, Saha/GreedyWalk 2015, Yi 2022 supermodularity) and frontier from
+% useful-readings-B.md sec 1-2 (Li-Eliassi-Rad SDM 2024, MIND 2025,
+% Liu KDD 2024 GNN+epidemic survey, Block et al. 2020 social
+% distancing strategies, Rizi/Stegehuis/Kivela Nature Comm 2025
+% homophily-and-percolation). For each anchor cite arxiv id from
+% the readings, fetched via the arxiv MCP per Karlo's note in the
+% approved plan.
+
+\section{Methods}
+\label{sec:methods}
+
+\subsection{Edge cost}
+% [DRAFT] L2-normalize one-hot of {dorm, year, major, gender, status,
+% high school}; missing-as-category. c_e = sigmoid(<x_u, x_v>).
+
+\subsection{The four policies}
+% [DRAFT] random; betweenness/cost; distance threshold (Louvain meta-graph
+% hop distance / cost); GNN (link-prediction-trained GraphSAGE; cost =
+% sigmoid(<z_u, z_v>); score = NetMelt eigenscore u_i*u_j / cost).
+
+\section{Experimental setup}
+\label{sec:setup}
+% [DRAFT] 5 campuses, R0 grid {0.8, 1.5, 3.0, 6.0}, gamma=0.10,
+% n_realizations=50, n_steps=200, burn_in=100, budget grid
+% {0%, 0.5%, 1%, 2%, 5%, 10%, 20%, 40%}. Seeds pinned at 42.
+
+\section{Results}
+\label{sec:results}
+
+\subsection{Main Pareto frontiers}
+% [DRAFT_AFTER_M4] one figure per R0; ranking heatmap; AUC table.
+% Insert paper/figures/main_pareto_R0_3.0.png
+% Insert paper/figures/main_ranking_R0_3.0.png
+
+\subsection{Robustness}
+% [DRAFT_AFTER_M6] one panel per robustness dimension (compliance,
+% SIR, adversarial seeding).
+
+\subsection{Ablations}
+% [DRAFT_AFTER_M5] one panel per ablation (GNN arch, cost function,
+% synthetic topology).
+
+\subsection{Cross-campus regression}
+% [DRAFT_AFTER_M7] discussion of which structural features predict when
+% the GNN dominates.
+
+\section{Discussion}
+\label{sec:discussion}
+
+\subsection{When does the learned cost help?}
+% [DRAFT_AFTER_M5] honest answer once the cost-function ablation runs.
+
+\subsection{Implementability gap}
+% [DRAFT] gap between ideal GNN/Betweenness frontier and realistic
+% Distance Threshold frontier; what would close it.
+
+\subsection{Limitations}
+% [DRAFT] Reference WARNINGS.md: Facebook100 is a friendship graph not
+% a contact graph; sigmoid_dot has a narrow dynamic range; SVD pre-
+% projection in the GNN; pivot-sampled betweenness; we do not solve
+% COVID.
+
+\section{Conclusion}
+\label{sec:conclusion}
+% [DRAFT_AFTER_EVERYTHING]
+
+\bibliographystyle{plainnat}
+\bibliography{refs}
+
+\appendix
+
+\section{Hyperparameters and reproducibility}
+\label{app:hparams}
+% [DRAFT] full config tables; pinned seeds; data download instructions.
+
+\section{Additional Pareto curves}
+\label{app:additional-pareto}
+% [DRAFT] full Pareto curves for all (campus x R0) cells.
+
+\end{document}
