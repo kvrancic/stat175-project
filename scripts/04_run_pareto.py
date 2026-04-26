@@ -39,10 +39,13 @@ RESULTS_DIR = REPO_ROOT / "results"
 
 
 def merge_configs(config: dict, default: dict) -> dict:
-    """Shallow-merge `config` over `default` for top-level keys."""
+    """Deep-merge `config` over `default`. Nested dicts are merged key-by-key."""
     merged = dict(default)
     for key, value in config.items():
-        merged[key] = value
+        if isinstance(value, dict) and isinstance(merged.get(key), dict):
+            merged[key] = merge_configs(value, merged[key])
+        else:
+            merged[key] = value
     return merged
 
 

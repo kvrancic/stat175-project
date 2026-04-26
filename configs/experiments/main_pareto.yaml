@@ -5,3 +5,6 @@ seed: 42
 # Override n_realizations here for quick iteration vs final runs.
 sis:
   n_realizations: 50
+
+# Faster betweenness for the larger campuses; document this approximation in the paper.
+betweenness_pivots: 300

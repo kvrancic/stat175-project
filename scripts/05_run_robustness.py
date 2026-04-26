@@ -240,9 +240,18 @@ def main() -> int:
     default_config = yaml.safe_load((REPO_ROOT / "configs" / "default.yaml").read_text())
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
+    def deep_merge(child: dict, parent: dict) -> dict:
+        merged = dict(parent)
+        for key, value in child.items():
+            if isinstance(value, dict) and isinstance(merged.get(key), dict):
+                merged[key] = deep_merge(value, merged[key])
+            else:
+                merged[key] = value
+        return merged
+
     def run_one(name: str, builder, config_path: Path, out_path: Path):
         cfg = yaml.safe_load(config_path.read_text())
-        cfg = {**default_config, **cfg}
+        cfg = deep_merge(cfg, default_config)
         df = builder(default_config, cfg)
         df.to_parquet(out_path, index=False)
         print(f"\n[saved] {out_path}  ({len(df)} rows)")
