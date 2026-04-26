@@ -1,0 +1,58 @@
+# Default experiment parameters. Specific experiments override values via configs/experiments/.
+seed: 42
+
+# Datasets (locked in docs/Project Outline.txt)
+campuses:
+  - Caltech36
+  - Bowdoin47
+  - Harvard1
+  - Penn94
+  - Tennessee95
+
+# SIS dynamics
+# beta is derived per-campus from R0 and the campus spectral radius:
+#     beta = R0 * gamma / lambda_1(A)
+# so the regime is comparable across campuses of very different size/density.
+sis:
+  gamma: 0.10
+  R0_grid: [0.8, 1.5, 3.0, 6.0]
+  n_steps: 200
+  burn_in: 100
+  n_seeds: 10
+  n_realizations: 50
+
+# SIR robustness
+sir:
+  gamma: 0.10
+  R0_grid: [1.5, 3.0]
+  n_steps: 300
+  n_seeds: 10
+  n_realizations: 50
+
+# Pareto budget grid (fractions of total cost)
+budget_fractions: [0.0, 0.005, 0.01, 0.02, 0.05, 0.10, 0.20, 0.40]
+
+# Cost functions
+cost_functions:
+  primary: sigmoid_dot
+  robustness:
+    - uniform
+    - cosine
+    - raw_dot
+    - oracle_lognormal
+
+# Approximate betweenness (Penn94 / Tennessee95 are too large for exact)
+betweenness_pivots: 500
+
+# GNN training (Milestone 3)
+gnn:
+  arch: graphsage
+  hidden_dim: 64
+  embed_dim: 32
+  n_layers: 2
+  dropout: 0.1
+  learning_rate: 0.005
+  weight_decay: 0.0001
+  epochs: 100
+  n_training_subsets: 200
+  subset_budget_fractions: [0.005, 0.02, 0.05, 0.10]
