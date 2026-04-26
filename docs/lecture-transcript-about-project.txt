@@ -1,0 +1,566 @@
+This report is clear, well-written, and well-organized.
+0:00:01 – 0:00:05
+
+Is the project tackling the precise question that you have well stated?
+0:00:05 – 0:00:13
+
+Is the project pushing beyond simple application towards something novel?
+0:00:13 – 0:00:18
+
+Is the content of the presentation correct and reproducible?
+0:00:18 – 0:00:24
+
+You will have to not only give us a detailed report,
+0:00:24 – 0:00:27
+
+but the report should be made available either by lending me the PowerPoint
+0:00:27 – 0:00:32
+
+or through the GitHub account.
+0:00:32 – 0:00:34
+
+I should be able to produce anything that you provide.
+0:00:34 – 0:00:38
+
+So, before you do it, I would suggest you leave a comment at your desk
+0:00:38 – 0:00:43
+
+and recall that you don't want to be late.
+0:00:43 – 0:00:46
+
+If the results are well discussed and well put in perspective,
+0:00:46 – 0:01:00
+
+this is a good discussion.
+0:01:00 – 0:01:02
+
+Those are mostly the questions.
+0:01:02 – 0:01:05
+
+Does that answer everyone?
+0:01:05 – 0:01:07
+
+Any questions about this?
+0:01:07 – 0:01:09
+
+Yes.
+0:01:09 – 0:01:11
+
+So, there is only the report?
+0:01:11 – 0:01:15
+
+That's the first part.
+0:01:15 – 0:01:18
+
+Because everyone is familiar with the project,
+0:01:18 – 0:01:20
+
+everyone knows what they are going to be doing,
+0:01:20 – 0:01:23
+
+if you hate it, that's fine for you to yell at me
+0:01:23 – 0:01:26
+
+and I have time to explain.
+0:01:26 – 0:01:29
+
+I thought it would be interesting to have,
+0:01:29 – 0:01:32
+
+there will be two classes over the semester.
+0:01:32 – 0:01:38
+
+You will be doing five-minute presentations.
+0:01:38 – 0:01:42
+
+So, I'd like to introduce each of you to the five-minute session
+0:01:42 – 0:01:48
+
+to talk with two different kinds of questions by other people
+0:01:48 – 0:01:52
+
+covering history, the cookies, and the supplements.
+0:01:52 – 0:01:56
+
+And this type of group of presenters shouldn't require as much effort
+0:01:56 – 0:02:03
+
+to create a five-minute talk.
+0:02:03 – 0:02:05
+
+But it's also a chance for you to get to know each other.
+0:02:05 – 0:02:08
+
+I'll talk over a group supplement.
+0:02:08 – 0:02:10
+
+And this will be June.
+0:02:10 – 0:02:12
+
+Before that, I'd like you to listen to some feedback
+0:02:12 – 0:02:14
+
+from those of you who are interested in this class.
+0:02:14 – 0:02:16
+
+Do you need this idea or not?
+0:02:16 – 0:02:21
+
+Wait, so these would be like the last day of class?
+0:02:21 – 0:02:24
+
+The last two days of class.
+0:02:24 – 0:02:25
+
+Yeah.
+0:02:25 – 0:02:26
+
+So, we get 20 groups from 19 to 19.
+0:02:26 – 0:02:30
+
+If you want to talk about me watching the two groups,
+0:02:30 – 0:02:33
+
+I would rather do it over two classes with time for questions.
+0:02:33 – 0:02:41
+
+So, we need to have every result done by those last two classes?
+0:02:41 – 0:02:46
+
+In the five-minute, we don't have time to do that.
+0:02:46 – 0:02:48
+
+I mean, yeah, but should the whole project be done by those last two classes?
+0:02:48 – 0:02:54
+
+No, let me clarify what is going to be in the lightning talk.
+0:02:54 – 0:02:57
+
+Because I don't want to answer your questions.
+0:02:57 – 0:02:59
+
+The lightning talk is going to be painful.
+0:02:59 – 0:03:03
+
+Except if you do something outrageous,
+0:03:03 – 0:03:05
+
+I expect most of you to be able to attend it.
+0:03:05 – 0:03:08
+
+Okay?
+0:03:08 – 0:03:09
+
+This is just an incentive.
+0:03:09 – 0:03:10
+
+I expect most of you to do it.
+0:03:10 – 0:03:12
+
+What I want you to do is to explain.
+0:03:12 – 0:03:15
+
+So, in designing the talk, you should explain what the project is about,
+0:03:15 – 0:03:21
+
+what is the question you are solving, why it is not too difficult to solve it,
+0:03:21 – 0:03:27
+
+and what are the ideas that you are pursuing.
+0:03:27 – 0:03:30
+
+You have already given some results already ready, for example.
+0:03:30 – 0:03:35
+
+But you will not be judged on what you have written,
+0:03:35 – 0:03:39
+
+on the quality of the result.
+0:03:39 – 0:03:41
+
+You don't have to be judged on the quality of the result.
+0:03:41 – 0:03:43
+
+But the judge in the lightning talk is the quality of the presentation
+0:03:43 – 0:03:48
+
+and the quality of which you are explaining what the question is
+0:03:48 – 0:03:52
+
+and what you are explaining the method you are tackling.
+0:03:52 – 0:03:54
+
+If you don't have the method already,
+0:03:54 – 0:03:56
+
+if you don't have the result yet, but you explain what the method is,
+0:03:56 – 0:04:00
+
+that's fine.
+0:04:00 – 0:04:01
+
+Does that answer your question?
+0:04:01 – 0:04:03
+
+Does that sound reasonable?
+0:04:03 – 0:04:05
+
+Is 5 minutes not adding to our short list yet?
+0:04:05 – 0:04:07
+
+5 minutes should be okay, right?
+0:04:07 – 0:04:09
+
+Okay.
+0:04:09 – 0:04:10
+
+5 minutes.
+0:04:10 – 0:04:11
+
+5 minutes, okay?
+0:04:11 – 0:04:13
+
+Okay.
+0:04:13 – 0:04:14
+
+And so that will be the last two papers. You should see this as a way to learn about people, about norm, and about the celebration of the past.
+0:04:14 – 0:04:26
+
+And then there will be in people, friends with animals. So watch the real past in front of you.
+0:04:26 – 0:04:45
+
+I will release in the next two days, a lot of slides on Google Chrome in the same way.
+0:04:45 – 0:04:56
+
+And I have a lot of slides for the group project discussion that we just had.
+0:04:56 – 0:05:06
+
+It will be individual, it will not be group. So the last report and the report will be the same way.
+0:05:06 – 0:05:18
+
+The individual will be a different way for different members of the group.
+0:05:18 – 0:05:24
+
+There are two reasons I am doing this. The first one is, sadly, this is something that we are strongly encouraged to do due to two gender issues.
+0:05:24 – 0:05:39
+
+And to make sure that it is something that is almost required of us to do.
+0:05:39 – 0:05:44
+
+But also, I think it is a good chance for you guys to have some more time to really realize the weight of the importance of the group project discussion.
+0:05:44 – 0:05:57
+
+My name is Nicolette, I am the person who is in charge of the entire project. The group has asked three questions.
+0:05:57 – 0:06:14
+
+Two of them, I will read the report before, so I will know what the project is about.
+0:06:14 – 0:06:19
+
+You don't have to present a presentation, you don't have to present any slide.
+0:06:19 – 0:06:25
+
+You have to ask three questions. Two questions about the content of the project.
+0:06:25 – 0:06:32
+
+And knowing that you are doing your own project, you shouldn't have any issue answering any of those questions.
+0:06:32 – 0:06:38
+
+There will be one question that will push for a deeper understanding of what you are doing and will be a bit more challenging.
+0:06:38 – 0:06:47
+
+This question is, you cannot see what you have put beyond what you have already done in the project.
+0:06:47 – 0:06:59
+
+I do not expect that all of you have a perfect answer and that the page will be long.
+0:06:59 – 0:07:05
+
+In my experience, you end up with 2.5 out of 3 questions right.
+0:07:05 – 0:07:12
+
+If you have 80% of the answers that are completely fine, that is what I would expect.
+0:07:12 – 0:07:18
+
+If you have even better than that, that is great.
+0:07:18 – 0:07:22
+
+I want to repeat that the project is basically an automatic 100 grade.
+0:07:22 – 0:07:32
+
+The only thing that allows you to show that it was written, that the other page is not going to be an automatic 100.
+0:07:32 – 0:07:41
+
+This is another chance for you to show something about the topic.
+0:07:41 – 0:07:46
+
+I know that I have been also in a lot of councils, by the way, so I understand that it is a bit stressful.
+0:07:46 – 0:07:55
+
+I have some good news in the back.
+0:07:55 – 0:07:58
+
+The good news is, hey, we are voting on which book will be made and not yesterday.
+0:07:58 – 0:08:06
+
+So, what I am trying to say is, I do not yet have to do that, so I am not making you all a cup.
+0:08:06 – 0:08:14
+
+It is not a set of, I mean, X% will be A, X% will be B, etc.
+0:08:14 – 0:08:21
+
+If you have an A, it is that you show mastery of the topic, B, etc.
+0:08:21 – 0:08:31
+
+I love it.
+0:08:31 – 0:08:34
+
+My goal is to help you demonstrate this to me and this is why I met with every group over the last few days.
+0:08:34 – 0:08:43
+
+It is to help you be on track.
+0:08:43 – 0:08:46
+
+If more people get my paper quiz, it is not like I have a quota of A's.
+0:08:46 – 0:08:54
+
+So, you do not need, you should not think that, oh, if I did not do very well on the midterm,
+0:08:54 – 0:09:02
+
+even if I do superbly on the project, I am doomed because others have done well on the midterm
+0:09:02 – 0:09:08
+
+and they will do good on the project.
+0:09:08 – 0:09:10
+
+That is not how it works.
+0:09:10 – 0:09:11
+
+You are not in competition with your neighbors and so if you do very well on the project
+0:09:11 – 0:09:17
+
+and you have not done that well on the midterm, that is okay.
+0:09:17 – 0:09:20
+
+If you average out, you might still have a very good grade.
+0:09:20 – 0:09:25
+
+So, it is not a fixed quota of A's.
+0:09:25 – 0:09:32
+
+But, that also means that not everyone is going necessarily to get 100
+0:09:32 – 0:09:36
+
+and so that also means that you should put some effort into the project
+0:09:36 – 0:09:41
+
+and that you really should see it as an occasion to master the work.
+0:09:41 – 0:09:46
+
+Why am I doing this project?
+0:09:46 – 0:09:48
+
+I am doing this project because my goal for you to express is that you learn how to reason
+0:09:48 – 0:09:55
+
+about learning on networks.
+0:09:55 – 0:09:57
+
+And we have our first one in this class, which we will review,
+0:09:57 – 0:10:00
+
+and it makes sense for me to kind of test this out with those pencil and paper.
+0:10:00 – 0:10:05
+
+The second part of this class is more for neural networks and I could create a whole exam
+0:10:05 – 0:10:15
+
+where you have to do some code.
+0:10:15 – 0:10:17
+
+I am zero interested in this.
+0:10:17 – 0:10:19
+
+And my goal is to help you learn how to use this and how to use the content of this class
+0:10:19 – 0:10:27
+
+on real research problem, on real data.
+0:10:27 – 0:10:32
+
+And the best way I know how to do that is to have a project.
+0:10:32 – 0:10:36
+
+Okay?
+0:10:36 – 0:10:37
+
+It is not a homework.
+0:10:37 – 0:10:38
+
+It is not a...
+0:10:38 – 0:10:39
+
+I am just speaking from what I like.
+0:10:39 – 0:10:41
+
+Everyone is going to get a very good grade and it is going to be a tool for you to learn.
+0:10:41 – 0:10:45
+
+The project is not that.
+0:10:45 – 0:10:46
+
+The project is a way for you to learn, but also a way for you to show.
+0:10:46 – 0:10:49
+
+Does that make sense?
+0:10:49 – 0:10:51
+
+So, now is the time to ask me all the questions you might have
+0:10:51 – 0:10:56
+
+or announce what you might have about the project.
+0:10:56 – 0:10:59
+
+Okay?
+0:10:59 – 0:11:00
+
+So, just to clarify where the individual parts of the work,
+0:11:00 – 0:11:03
+
+like if you have a group of 4 members, so each signing up for 4 different...
+0:11:03 – 0:11:06
+
+Yes.
+0:11:06 – 0:11:07
+
+Why am I doing that?
+0:11:07 – 0:11:09
+
+The first one is I want to be able to ask each member,
+0:11:09 – 0:11:15
+
+if I have 3 people in the room, what usually happens is I don't necessarily ask all the questions,
+0:11:15 – 0:11:20
+
+because I want to be able to have a discussion with each one of them.
+0:11:20 – 0:11:24
+
+The second thing is that I wouldn't be doing this room to be...
+0:11:24 – 0:11:31
+
+It would be impossible for me to schedule time.
+0:11:31 – 0:11:37
+
+Absolutely everyone.
+0:11:37 – 0:11:38
+
+So, I would need a huge amount of slots, much more than I expect you guys to need to sign up for.
+0:11:38 – 0:11:44
+
+The goal is that you can use that freedom to choose a time that works for your schedule.
+0:11:44 – 0:11:51
+
+I know you all have different classes or different exams,
+0:11:51 – 0:11:54
+
+and so you can pick that that best works for your calendar
+0:11:54 – 0:12:00
+
+and stress on the different exams and different projects.
+0:12:00 – 0:12:04
+
+It will be in person, not on Zoom.
+0:12:04 – 0:12:08
+
+It will be in person, and...
+0:12:08 – 0:12:10
+
+And it will involve different partners.
+0:12:10 – 0:12:16
+
+Yes.
+0:12:16 – 0:12:17
+
+I will need to... I will read every single report,
+0:12:17 – 0:12:21
+
+and that will be based on the reports.
+0:12:21 – 0:12:26
+
+What dates will the in vivo part start?
+0:12:26 – 0:12:30
+
+It will be in many different days, so that everyone can...
+0:12:30 – 0:12:33
+
+But when does it start?
+0:12:33 – 0:12:35
+
+I don't have the...
+0:12:35 – 0:12:37
+
+No worries.
+0:12:37 – 0:12:44
+
+Any other concerns or questions?
+0:12:45 – 0:12:47
+
+Anything you would like to add?
+0:12:47 – 0:12:50
+
+If you have concerns or things that you don't like at the moment,
+0:12:50 – 0:12:53
+
+it says that if you don't like this break in general, well, that can't help.
+0:12:53 – 0:12:57
+
+I wish I could.
+0:12:57 – 0:12:58
+
+Or if you are like, I hate projects, I'm sorry.
+0:12:58 – 0:13:01
+
+But if you have concerns about the format or anything,
+0:13:01 – 0:13:05
+
+now that you have to ask.
+0:13:05 – 0:13:07
+
+It's not like the time in questions, so for the individual part,
+0:13:07 – 0:13:11
+
+wouldn't it be like time slots up to 15 minutes or 30 minutes?
+0:13:11 – 0:13:14
+
+Oh, that's a very good question.
+0:13:14 – 0:13:15
+
+Yes.
+0:13:15 – 0:13:16
+
+Considering the number of the individual students,
+0:13:16 – 0:13:19
+
+to keep in mind, it would be maybe around 15 minutes.
+0:13:19 – 0:13:23
+
+Plus, minus 15 minutes, you know.
+0:13:23 – 0:13:25
+
+That's great.
+0:13:25 – 0:13:26
+
+Minus 15 minutes, you know.
+0:13:26 – 0:13:28
+
+Yes.
+0:13:28 – 0:13:29
+
+For the novel part, how is the schedule?
+0:13:29 – 0:13:34
+
+Like, what are you working on?
+0:13:34 – 0:13:37
+
+Well, as far as I know, half of it is going to be in vivo meetings this week.
+0:13:37 – 0:13:43
+
+Um...
+0:13:43 – 0:13:44
