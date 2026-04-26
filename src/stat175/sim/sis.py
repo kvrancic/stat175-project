@@ -86,6 +86,9 @@ def run_sis(
         raise ValueError(f"beta must be in [0, 1), got {config.beta}")
     log_one_minus_beta = np.log1p(-config.beta) if config.beta > 0 else 0.0
 
+    # Cast adjacency to float32 once; matvec is the per-step bottleneck.
+    adjacency_float = adjacency.astype(np.float32)
+
     per_step = np.zeros((config.n_realizations, config.n_steps + 1), dtype=np.float64)
     extinction_steps: list[int | None] = []
 
@@ -102,7 +105,7 @@ def run_sis(
 
         for step_index in range(1, config.n_steps + 1):
             infected = _sis_step(
-                adjacency=adjacency,
+                adjacency=adjacency_float,
                 infected=infected,
                 gamma=config.gamma,
                 log_one_minus_beta=log_one_minus_beta,
@@ -149,8 +152,8 @@ def _sis_step(
     """Advance the SIS state vector by one stochastic step."""
     susceptible = ~infected
 
-    # Number of infected neighbors per node = A @ infected (integer dtype keeps it cheap).
-    infected_count = adjacency.astype(np.int32) @ infected.astype(np.int32)
+    # Number of infected neighbors per node = A @ infected.
+    infected_count = adjacency @ infected.astype(np.float32)
 
     # P(susceptible -> infected) = 1 - (1 - beta) ^ k
     if log_one_minus_beta == 0.0:

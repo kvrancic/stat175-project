@@ -1,0 +1,10 @@
+# Robustness panel 1: imperfect compliance.
+# Re-runs the main experiment with a fraction of "removed" edges
+# randomly flipped back into the residual graph before the SIS sim.
+seed: 42
+compliance_levels: [1.0, 0.8, 0.6]
+
+sis:
+  R0_grid: [1.5, 3.0]
+  n_realizations: 50
+budget_fractions: [0.0, 0.01, 0.05, 0.10, 0.20]

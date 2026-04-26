@@ -32,44 +32,50 @@ class DistanceThreshold:
 
     def __init__(self, resolution: float = 1.0):
         self.resolution = resolution
+        self._cached_distances: np.ndarray | None = None
+        self._cached_adjacency_id: int | None = None
 
     def select(self, inputs: PolicyInput) -> np.ndarray:
-        graph = nx.from_scipy_sparse_array(inputs.adjacency)
-        partition = community_louvain.best_partition(
-            graph,
-            random_state=int(inputs.seed),
-            resolution=self.resolution,
-        )
+        adjacency_id = id(inputs.adjacency)
+        if self._cached_distances is not None and self._cached_adjacency_id == adjacency_id:
+            meta_distances = self._cached_distances
+        else:
+            graph = nx.from_scipy_sparse_array(inputs.adjacency)
+            partition = community_louvain.best_partition(
+                graph,
+                random_state=int(inputs.seed),
+                resolution=self.resolution,
+            )
 
-        n_edges = inputs.edges.shape[0]
-        community_of_node = np.zeros(graph.number_of_nodes(), dtype=np.int64)
-        for node, community_id in partition.items():
-            community_of_node[node] = community_id
+            n_edges = inputs.edges.shape[0]
+            community_of_node = np.zeros(graph.number_of_nodes(), dtype=np.int64)
+            for node, community_id in partition.items():
+                community_of_node[node] = community_id
 
-        # Build the community meta-graph (nodes = communities, edges = shared inter-community edges).
-        meta_graph = nx.Graph()
-        for community_id in set(partition.values()):
-            meta_graph.add_node(community_id)
-        for u, v in inputs.edges:
-            cu = int(community_of_node[u])
-            cv = int(community_of_node[v])
-            if cu != cv and not meta_graph.has_edge(cu, cv):
-                meta_graph.add_edge(cu, cv)
+            # Build the community meta-graph (nodes = communities, edges = shared inter-community edges).
+            meta_graph = nx.Graph()
+            for community_id in set(partition.values()):
+                meta_graph.add_node(community_id)
+            edge_pairs_communities = community_of_node[inputs.edges]
+            for cu, cv in edge_pairs_communities:
+                if cu != cv and not meta_graph.has_edge(int(cu), int(cv)):
+                    meta_graph.add_edge(int(cu), int(cv))
 
-        # All-pairs shortest path on the meta-graph (small).
-        path_lengths = dict(nx.all_pairs_shortest_path_length(meta_graph))
+            # All-pairs shortest path on the meta-graph (small).
+            path_lengths = dict(nx.all_pairs_shortest_path_length(meta_graph))
 
-        # Within-community distance is 0; between-community distance is the meta-graph hop count.
-        meta_distances = np.zeros(n_edges, dtype=np.float64)
-        for index in range(n_edges):
-            u = int(inputs.edges[index, 0])
-            v = int(inputs.edges[index, 1])
-            cu = int(community_of_node[u])
-            cv = int(community_of_node[v])
-            if cu == cv:
-                meta_distances[index] = 0.0
-            else:
-                meta_distances[index] = float(path_lengths.get(cu, {}).get(cv, len(meta_graph)))
+            # Within-community distance is 0; between-community distance is the meta-graph hop count.
+            meta_distances = np.zeros(n_edges, dtype=np.float64)
+            n_meta = len(meta_graph)
+            for index in range(n_edges):
+                cu = int(edge_pairs_communities[index, 0])
+                cv = int(edge_pairs_communities[index, 1])
+                if cu == cv:
+                    meta_distances[index] = 0.0
+                else:
+                    meta_distances[index] = float(path_lengths.get(cu, {}).get(cv, n_meta))
+            self._cached_distances = meta_distances
+            self._cached_adjacency_id = adjacency_id
 
         # Score so highest score = furthest distance per unit cost. Greedy fill until budget.
         score = meta_distances / np.clip(inputs.costs, 1e-6, None)

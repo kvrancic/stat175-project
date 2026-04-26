@@ -22,21 +22,29 @@ class EdgeBetweennessOverCost:
 
     def __init__(self, betweenness_pivots: int = 500):
         self.betweenness_pivots = betweenness_pivots
+        self._cached_scores: np.ndarray | None = None
+        self._cached_adjacency_id: int | None = None
 
     def select(self, inputs: PolicyInput) -> np.ndarray:
-        graph = nx.from_scipy_sparse_array(inputs.adjacency)
-        n = graph.number_of_nodes()
-        k = None if self.betweenness_pivots >= n else int(self.betweenness_pivots)
-        seed = int(inputs.seed)
-        if k is None:
-            betweenness = nx.edge_betweenness_centrality(graph, normalized=False, seed=seed)
+        adjacency_id = id(inputs.adjacency)
+        if self._cached_scores is not None and self._cached_adjacency_id == adjacency_id:
+            scores = self._cached_scores
         else:
-            betweenness = nx.edge_betweenness_centrality(graph, k=k, normalized=False, seed=seed)
+            graph = nx.from_scipy_sparse_array(inputs.adjacency)
+            n = graph.number_of_nodes()
+            k = None if self.betweenness_pivots >= n else int(self.betweenness_pivots)
+            seed = int(inputs.seed)
+            if k is None:
+                betweenness = nx.edge_betweenness_centrality(graph, normalized=False, seed=seed)
+            else:
+                betweenness = nx.edge_betweenness_centrality(graph, k=k, normalized=False, seed=seed)
 
-        scores = np.zeros(inputs.edges.shape[0], dtype=np.float64)
-        for index, (u, v) in enumerate(inputs.edges):
-            edge_key = (int(u), int(v)) if (int(u), int(v)) in betweenness else (int(v), int(u))
-            scores[index] = betweenness.get(edge_key, 0.0)
+            scores = np.zeros(inputs.edges.shape[0], dtype=np.float64)
+            for index, (u, v) in enumerate(inputs.edges):
+                edge_key = (int(u), int(v)) if (int(u), int(v)) in betweenness else (int(v), int(u))
+                scores[index] = betweenness.get(edge_key, 0.0)
+            self._cached_scores = scores
+            self._cached_adjacency_id = adjacency_id
 
         # Bang-for-buck: betweenness divided by cost, with a small floor on the cost
         # so that an oracle-zero-cost edge does not dominate purely on the divisor.

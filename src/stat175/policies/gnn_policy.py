@@ -46,9 +46,15 @@ class GNNPolicy:
         self.epsilon = epsilon
         self.device = device
         self._cached_embeddings: np.ndarray | None = None
+        self._cached_eigenvector: np.ndarray | None = None
         self._cached_adjacency_id: int | None = None
 
     def select(self, inputs: PolicyInput) -> np.ndarray:
+        adjacency_id = id(inputs.adjacency)
+        if self._cached_adjacency_id != adjacency_id:
+            self._cached_embeddings = None
+            self._cached_eigenvector = None
+            self._cached_adjacency_id = adjacency_id
         embeddings = self._embed(inputs.adjacency)
 
         # Learned per-edge cost: sigmoid(<z_u, z_v>).
@@ -58,11 +64,10 @@ class GNNPolicy:
         learned_cost = 1.0 / (1.0 + np.exp(-inner))
 
         # Structural impact via NetMelt eigenscore on the residual adjacency.
-        leading_eigenvector = _leading_eigenvector(inputs.adjacency)
-        eigenscore = (
-            leading_eigenvector[u_index] * leading_eigenvector[v_index]
-            + leading_eigenvector[v_index] * leading_eigenvector[u_index]
-        )
+        if self._cached_eigenvector is None:
+            self._cached_eigenvector = _leading_eigenvector(inputs.adjacency)
+        leading_eigenvector = self._cached_eigenvector
+        eigenscore = 2.0 * leading_eigenvector[u_index] * leading_eigenvector[v_index]
 
         # Bang-for-buck: containment impact per unit social cost.
         score = eigenscore / np.clip(learned_cost, self.epsilon, None)
@@ -73,7 +78,14 @@ class GNNPolicy:
         if self._cached_embeddings is not None and self._cached_adjacency_id == adjacency_id:
             return self._cached_embeddings
         self.encoder.eval()
-        feature_tensor = features_to_torch(self.features).to(torch.device(self.device))
+        projection = getattr(self.encoder, "projection_matrix", None)
+        if projection is not None:
+            projected = self.features @ projection
+            feature_tensor = torch.from_numpy(np.asarray(projected, dtype=np.float32)).to(
+                torch.device(self.device)
+            )
+        else:
+            feature_tensor = features_to_torch(self.features).to(torch.device(self.device))
         edge_index = adjacency_to_edge_index(adjacency).to(torch.device(self.device))
         with torch.no_grad():
             embeddings = self.encoder(feature_tensor, edge_index)

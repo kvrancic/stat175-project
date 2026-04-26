@@ -1,0 +1,13 @@
+# Ablation: vary the per-edge cost function.
+# All four policies are re-run under each cost; the GNN policy retrains
+# its encoder under each (since its cost depends on the cost-function
+# choice only via comparison -- the encoder itself does not change).
+seed: 42
+cost_functions:
+  primary: sigmoid_dot
+  variants: [sigmoid_dot, cosine, raw_dot, uniform, oracle_lognormal]
+
+sis:
+  R0_grid: [3.0]
+  n_realizations: 50
+budget_fractions: [0.0, 0.01, 0.05, 0.10, 0.20]

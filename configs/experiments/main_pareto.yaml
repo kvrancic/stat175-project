@@ -1,0 +1,7 @@
+# Main Pareto experiment: 5 campuses x 4 policies x 4 R0 values x 8 budgets.
+# Inherits everything from configs/default.yaml; overrides only what changes.
+seed: 42
+
+# Override n_realizations here for quick iteration vs final runs.
+sis:
+  n_realizations: 50

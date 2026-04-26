@@ -37,6 +37,9 @@ class TrainingConfig:
     val_fraction: float = 0.1
     seed: int = 42
     device: str = "cpu"
+    max_train_pairs: int | None = None  # subsample positive pairs per epoch (None = use all)
+    log_every: int = 10  # print/val frequency in epochs
+    project_features_to: int | None = 64  # TruncatedSVD pre-projection of one-hot features
 
 
 @dataclass
@@ -44,6 +47,7 @@ class TrainingResult:
     encoder: GNNEncoder
     train_losses: list[float]
     val_aurocs: list[float]
+    projection_matrix: np.ndarray | None = None  # TruncatedSVD components if pre-projected
 
 
 def train_link_prediction(
@@ -52,11 +56,20 @@ def train_link_prediction(
     gnn_config: GNNConfig,
     training_config: TrainingConfig,
 ) -> TrainingResult:
-    """Train ``gnn_config``-sized encoder via link-prediction BCE."""
-    if gnn_config.in_dim != features.shape[1]:
+    """Train ``gnn_config``-sized encoder via link-prediction BCE.
+
+    Projects the (very high-dim) one-hot feature matrix down to
+    ``training_config.project_features_to`` dimensions via TruncatedSVD
+    before running the GNN, so per-epoch cost does not scale with the
+    raw feature dimension. The projection matrix is computed once and
+    used for both training and downstream embedding queries.
+    """
+    feature_input, projection_matrix = _maybe_project_features(features, training_config)
+
+    if gnn_config.in_dim != feature_input.shape[1]:
         gnn_config = GNNConfig(
             arch=gnn_config.arch,
-            in_dim=int(features.shape[1]),
+            in_dim=int(feature_input.shape[1]),
             hidden_dim=gnn_config.hidden_dim,
             embed_dim=gnn_config.embed_dim,
             n_layers=gnn_config.n_layers,
@@ -82,7 +95,7 @@ def train_link_prediction(
 
     # Use the FULL graph for message passing (transductive link prediction)
     full_edge_index = adjacency_to_edge_index(adjacency).to(device)
-    feature_tensor = features_to_torch(features).to(device)
+    feature_tensor = torch.from_numpy(np.asarray(feature_input, dtype=np.float32)).to(device)
 
     encoder = GNNEncoder(gnn_config).to(device)
     optimizer = torch.optim.Adam(
@@ -94,18 +107,26 @@ def train_link_prediction(
 
     train_losses: list[float] = []
     val_aurocs: list[float] = []
+    import time as _time
+
     for epoch_index in range(training_config.epochs):
+        epoch_start = _time.time()
         encoder.train()
         optimizer.zero_grad()
 
         embeddings = encoder(feature_tensor, full_edge_index)
 
-        n_train_pos = train_pos.shape[0]
+        if training_config.max_train_pairs is not None and train_pos.shape[0] > training_config.max_train_pairs:
+            sampled = rng.choice(train_pos.shape[0], size=training_config.max_train_pairs, replace=False)
+            train_pos_epoch = train_pos[sampled]
+        else:
+            train_pos_epoch = train_pos
+        n_train_pos = train_pos_epoch.shape[0]
         neg_u = rng.integers(0, n_nodes, size=n_train_pos * training_config.neg_sampling_ratio)
         neg_v = rng.integers(0, n_nodes, size=n_train_pos * training_config.neg_sampling_ratio)
         neg_pairs = np.column_stack([neg_u, neg_v]).astype(np.int64)
 
-        all_pairs_np = np.concatenate([train_pos, neg_pairs], axis=0)
+        all_pairs_np = np.concatenate([train_pos_epoch, neg_pairs], axis=0)
         labels_np = np.concatenate(
             [
                 np.ones(n_train_pos, dtype=np.float32),
@@ -121,21 +142,62 @@ def train_link_prediction(
         optimizer.step()
         train_losses.append(float(loss.item()))
 
-        if (epoch_index + 1) % 10 == 0 or epoch_index == 0:
+        if (epoch_index + 1) % training_config.log_every == 0 or epoch_index == 0:
             val_score = _validation_auroc(encoder, feature_tensor, full_edge_index, val_pos, n_nodes, rng, device)
             val_aurocs.append(val_score)
+            print(
+                f"    epoch {epoch_index + 1:>3}/{training_config.epochs}: "
+                f"loss={train_losses[-1]:.4f} val_AUROC={val_score:.4f} "
+                f"({_time.time() - epoch_start:.1f}s/epoch)",
+                flush=True,
+            )
 
-    return TrainingResult(encoder=encoder, train_losses=train_losses, val_aurocs=val_aurocs)
+    return TrainingResult(
+        encoder=encoder,
+        train_losses=train_losses,
+        val_aurocs=val_aurocs,
+        projection_matrix=projection_matrix,
+    )
 
 
-def encode(encoder: GNNEncoder, features: sp.csr_array, adjacency: sp.csr_array, device: str = "cpu") -> np.ndarray:
-    """Run the encoder once and return embeddings as a numpy array."""
+def encode(
+    encoder: GNNEncoder,
+    features: sp.csr_array,
+    adjacency: sp.csr_array,
+    device: str = "cpu",
+    projection_matrix: np.ndarray | None = None,
+) -> np.ndarray:
+    """Run the encoder once and return embeddings as a numpy array.
+
+    If ``projection_matrix`` is provided, applies it to the raw features
+    first (matching what was done during training).
+    """
     encoder.eval()
-    feature_tensor = features_to_torch(features).to(torch.device(device))
+    if projection_matrix is not None:
+        projected = features @ projection_matrix
+        feature_tensor = torch.from_numpy(np.asarray(projected, dtype=np.float32)).to(torch.device(device))
+    else:
+        feature_tensor = features_to_torch(features).to(torch.device(device))
     edge_index = adjacency_to_edge_index(adjacency).to(torch.device(device))
     with torch.no_grad():
         embeddings = encoder(feature_tensor, edge_index)
     return embeddings.detach().cpu().numpy()
+
+
+def _maybe_project_features(features: sp.csr_array, config: TrainingConfig):
+    """Optionally project sparse features to a fixed low dim via TruncatedSVD.
+
+    Returns (projected_features, projection_components_or_None). For very low
+    feature dims we return the dense features unchanged.
+    """
+    target = config.project_features_to
+    if target is None or features.shape[1] <= target:
+        return features.toarray().astype(np.float32), None
+    from sklearn.decomposition import TruncatedSVD
+
+    svd = TruncatedSVD(n_components=target, random_state=config.seed)
+    projected = svd.fit_transform(features).astype(np.float32)
+    return projected, svd.components_.T.astype(np.float32)
 
 
 def _validation_auroc(

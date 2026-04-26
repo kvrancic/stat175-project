@@ -47,12 +47,13 @@ betweenness_pivots: 500
 # GNN training (Milestone 3)
 gnn:
   arch: graphsage
-  hidden_dim: 64
-  embed_dim: 32
+  hidden_dim: 32
+  embed_dim: 16
   n_layers: 2
   dropout: 0.1
-  learning_rate: 0.005
+  learning_rate: 0.01
   weight_decay: 0.0001
-  epochs: 100
+  epochs: 40
+  max_train_pairs: 200000  # subsample for very dense graphs (Penn94 has 1.36M edges)
   n_training_subsets: 200
   subset_budget_fractions: [0.005, 0.02, 0.05, 0.10]

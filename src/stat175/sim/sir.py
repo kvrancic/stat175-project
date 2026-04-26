@@ -47,6 +47,8 @@ def run_sir(
         raise ValueError(f"beta must be in [0, 1), got {config.beta}")
     log_one_minus_beta = np.log1p(-config.beta) if config.beta > 0 else 0.0
 
+    adjacency_float = adjacency.astype(np.float32)
+
     per_step_inf = np.zeros((config.n_realizations, config.n_steps + 1))
     per_step_rec = np.zeros((config.n_realizations, config.n_steps + 1))
     final_sizes = np.zeros(config.n_realizations)
@@ -65,7 +67,7 @@ def run_sir(
 
         for step_index in range(1, config.n_steps + 1):
             susceptible = ~(infected | recovered)
-            infected_count = adjacency.astype(np.int32) @ infected.astype(np.int32)
+            infected_count = adjacency_float @ infected.astype(np.float32)
             if log_one_minus_beta == 0.0:
                 infect_probability = np.zeros_like(infected_count, dtype=np.float64)
             else:
