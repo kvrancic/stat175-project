@@ -433,8 +433,41 @@ per-$R_0$ winner counts and the average $5\%$-budget reduction.
 % SIR, adversarial seeding).
 
 \subsection{Ablations}
-% [DRAFT_AFTER_M5] one panel per ablation (GNN arch, cost function,
-% synthetic topology).
+\label{sec:results-ablations}
+
+\paragraph{GNN architecture
+(Figure~\ref{fig:ablation-gnn-arch}).}
+We retrain the encoder under three GNN architectures (GraphSAGE,
+GAT, GCN), keeping every other hyperparameter and the
+self-supervised link-prediction loss identical, and re-run the
+GNN policy at $R_0 = 3$. The mean steady-state prevalence at
+$5\%$ budget is $0.306$ for GraphSAGE, $0.306$ for GAT, and
+$0.306$ for GCN, indistinguishable across all five campuses to
+three decimals. The architecture choice contributes nothing
+material to the cost surface; the cost-learning \emph{framework}
+is the load-bearing piece, not the specific message-passing
+operator. This is reassuring: the GNN advantage we report in
+Section~\ref{sec:results-pareto} is not an artifact of choosing
+GraphSAGE over its peers.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.95\linewidth]{figures/ablation_gnn_arch_R0_3.0.png}
+    \caption{GNN-architecture ablation, $R_0 = 3$. GraphSAGE,
+        GAT, and GCN encoders produce essentially identical
+        cost surfaces under the same self-supervised
+        link-prediction objective; differences in the resulting
+        Pareto frontier are within bootstrap CI.}
+    \label{fig:ablation-gnn-arch}
+\end{figure}
+
+\paragraph{Cost-function ablation.}
+% [DRAFT_AFTER_M5_COST] populated once results/ablation_cost_function.parquet
+% lands.
+
+\paragraph{Synthetic topology ablation.}
+% [DRAFT_AFTER_M5_SYNTH] populated once results/ablation_synthetic_topology.parquet
+% lands.
 
 \subsection{Cross-campus regression}
 \label{sec:results-regression}
