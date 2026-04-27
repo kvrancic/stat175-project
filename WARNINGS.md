@@ -72,6 +72,21 @@ A running ledger of every place we traded off rigor for tractability. Each item 
 
 **Future iteration.** Add ten more universities from the full Facebook100 set to push the cross-campus regression into a regime where multivariate inference is meaningful (n=15 lets a 4-predictor model get an honest $R^2$). The full 100-campus loader is already implemented; only `data/processed/<name>.npz` caches need to be regenerated.
 
+## Robustness + ablation simulation budget
+
+**What we did.** After the first attempt at the SIR + adversarial robustness panels and the cost-function + synthetic-topology ablations ran for 12+ hours on a heavily contended local machine without finishing, we reduced their per-cell simulation parameters:
+
+- `robustness_sir.yaml`: `n_realizations` 50 -> 20; `n_steps` 300 -> 150.
+- `robustness_adversarial_seed.yaml`: `n_realizations` 30 -> 20; `n_steps` 200 -> 100.
+- `ablation_cost_function.yaml`: `n_realizations` 50 -> 20; `n_steps` 200 -> 100.
+- `ablation_synthetic_topology.yaml`: `n_realizations` 50 -> 20; `n_steps` 200 -> 100.
+
+Compliance panel (`robustness_compliance.parquet`) and GNN-architecture ablation (`ablation_gnn_arch.parquet`) had already saved at full fidelity (50 realizations) and are unaffected.
+
+**Why.** Penn94 SIR cells were taking ~15-30 min/cell on the contended laptop, projecting ~22 hours for the remaining robustness panels. Reduced params give a ~5x speedup, making the full panel set tractable in 1-2 hours and producing the qualitative pattern the discussion section needs.
+
+**Future iteration.** Restore `n_realizations` 50 and `n_steps` 200/300 in the YAML files and re-run on a less contended machine (cluster, idle laptop overnight, or A100 Colab if relevant). Bootstrap CIs will tighten and the confidence intervals shown in the figures will visibly shrink, but the policy ranking is unlikely to change.
+
 ## Reproducibility caveats
 
 - All seeds pinned to 42 by default. Random initial-infected sets, random negative pairs in GNN training, random pivot sampling in betweenness, and Louvain initialization all reroll deterministically off this seed.

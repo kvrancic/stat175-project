@@ -5,5 +5,6 @@ seed: 42
 
 sis:
   R0_grid: [1.5, 3.0]
-  n_realizations: 30
+  n_realizations: 20         # reduced from 30 for tractable local runtime; cluster re-run should restore 30+
+  n_steps: 100               # reduced from default 200; cluster re-run should restore 200
 budget_fractions: [0.0, 0.01, 0.05, 0.10, 0.20]

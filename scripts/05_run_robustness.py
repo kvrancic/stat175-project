@@ -143,7 +143,8 @@ def sir_panel(default_config: dict, panel_config: dict) -> pd.DataFrame:
                     sir_config = SIRConfig(
                         beta=beta,
                         gamma=gamma,
-                        n_steps=int(default_config["sir"]["n_steps"]),
+                        # Read n_steps from panel_config so the panel YAML can override.
+                        n_steps=int(panel_config["sir"].get("n_steps", default_config["sir"]["n_steps"])),
                         n_seeds=int(default_config["sir"]["n_seeds"]),
                         n_realizations=int(panel_config["sir"]["n_realizations"]),
                         seed=int(default_config["seed"]),
@@ -207,8 +208,9 @@ def adversarial_seed_panel(default_config: dict, panel_config: dict) -> pd.DataF
                     sis_config = SISConfig(
                         beta=beta,
                         gamma=gamma,
-                        n_steps=int(default_config["sis"]["n_steps"]),
-                        burn_in=int(default_config["sis"]["burn_in"]),
+                        # Read n_steps from panel_config so the panel YAML can override.
+                        n_steps=int(panel_config["sis"].get("n_steps", default_config["sis"]["n_steps"])),
+                        burn_in=int(panel_config["sis"].get("burn_in", default_config["sis"]["burn_in"])),
                         n_seeds=n_seeds,
                         n_realizations=int(panel_config["sis"]["n_realizations"]),
                         seed=int(default_config["seed"]),

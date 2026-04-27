@@ -7,5 +7,6 @@ synthetic:
 
 sis:
   R0_grid: [3.0]
-  n_realizations: 50
+  n_realizations: 20         # reduced from 50 for tractable local runtime; cluster re-run should restore 50
+  n_steps: 100               # reduced from default 200; cluster re-run should restore 200
 budget_fractions: [0.0, 0.01, 0.05, 0.10, 0.20]

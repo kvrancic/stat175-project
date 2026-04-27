@@ -87,8 +87,8 @@ def gnn_arch_ablation(default_config: dict, ablation_config: dict) -> pd.DataFra
                     beta=beta,
                     budget_fractions=budget_fractions,
                     n_realizations=n_realizations,
-                    n_steps=int(default_config["sis"]["n_steps"]),
-                    burn_in=int(default_config["sis"]["burn_in"]),
+                    n_steps=int(ablation_config["sis"].get("n_steps", default_config["sis"]["n_steps"])),
+                    burn_in=int(ablation_config["sis"].get("burn_in", default_config["sis"]["burn_in"])),
                     n_seeds=int(default_config["sis"]["n_seeds"]),
                     seed=seed,
                 )
@@ -148,8 +148,8 @@ def cost_function_ablation(default_config: dict, ablation_config: dict) -> pd.Da
                         beta=beta,
                         budget_fractions=budget_fractions,
                         n_realizations=n_realizations,
-                        n_steps=int(default_config["sis"]["n_steps"]),
-                        burn_in=int(default_config["sis"]["burn_in"]),
+                        n_steps=int(ablation_config["sis"].get("n_steps", default_config["sis"]["n_steps"])),
+                        burn_in=int(ablation_config["sis"].get("burn_in", default_config["sis"]["burn_in"])),
                         n_seeds=int(default_config["sis"]["n_seeds"]),
                         seed=seed,
                     )
@@ -214,8 +214,8 @@ def synthetic_topology_ablation(default_config: dict, ablation_config: dict) -> 
                     beta=beta,
                     budget_fractions=budget_fractions,
                     n_realizations=n_realizations,
-                    n_steps=int(default_config["sis"]["n_steps"]),
-                    burn_in=int(default_config["sis"]["burn_in"]),
+                    n_steps=int(ablation_config["sis"].get("n_steps", default_config["sis"]["n_steps"])),
+                    burn_in=int(ablation_config["sis"].get("burn_in", default_config["sis"]["burn_in"])),
                     n_seeds=int(default_config["sis"]["n_seeds"]),
                     seed=seed,
                 )
