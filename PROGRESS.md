@@ -87,3 +87,29 @@ Mean steady-state reduction at 5 % budget (vs no removal):
 | 6.0 | +0.0125 | +0.0223     | +0.0129            | +0.0056   |
 
 Story: the **learned cost dominates near the epidemic threshold** (R₀ ≤ 1.5), where small structural differences matter most. In the strongly endemic regime (R₀ = 6) classical baselines (betweenness, community-bubble) win because the graph is too saturated for cost-aware fine-tuning to matter. This is the "when does the GNN help, and when does it not?" answer the discussion section needs.
+
+**M7 done — cross-campus structural regression saved 128 univariate fits.**
+
+- Why: with 5 campuses and 8 predictors, a multivariate fit is exactly determined and produces R²=1 by construction. Replaced with univariate slope + Pearson correlation per (policy, R0, predictor) so the paper can quote a defensible direction without overstating significance.
+- What's in: `results/cross_campus_regression.parquet` (128 rows), `results/campus_structural_stats.csv` (per-campus n_nodes, density, mean_degree, clustering, assortativity, modularity, homophily_dorm, homophily_year), `paper/figures/cross_campus_regression.png` (heatmap of Pearson r per policy×predictor at each R0).
+- Headline finding: at every R₀ ≥ 1.5, every policy's AUC is **positively** correlated with global clustering coefficient (r > 0.88) and edge density (r > 0.87) and **negatively** correlated with node count (r < -0.89 at R₀ ≥ 3.0). At the campus level, structural clustering matters more than per-attribute homophily for explaining cross-campus variation.
+
+**Paper draft progress.**
+
+- `paper/main.tex`: Introduction + Background + Related Work + Methods + Experimental setup + Results (Main Pareto + Cross-campus regression) + Discussion (When does the learned cost help? + Implementability gap + Limitations) + Conclusion + Appendix (Hyperparameters + Additional Pareto curves + ablation pointers + regression coefficients) all filled. Robustness and Ablations subsections still have `[DRAFT_AFTER_M5/M6]` markers awaiting parquets.
+- `presentation/lightning-talk.md`: POPULATE_AFTER_M4 marker filled with the regime-split numbers.
+
+**M5 + M6 in flight (background).**
+
+- `scripts/05_run_robustness.py` (PID launched after the cache+buffering fix): ran past Caltech36, Bowdoin47, now into Harvard1 of compliance panel. Per-policy precomputes are now cached once per campus instead of re-instantiating inside the compliance/R0 loop (which was wasting ~6× betweenness recompute on Penn94).
+- `scripts/06_run_ablations.py`: GNN-architecture ablation completed all 5 campuses × 3 archs trainings; SIS sweep on Tennessee95 GCN running. Then cost-function ablation, then synthetic-topology ablation. Fixed: the ablation now mirrors `load_encoder`'s contract by setting `encoder.projection_matrix = res.projection_matrix` after `train_link_prediction`, so the SVD pre-projection that training applies is also applied at inference time.
+
+**Suggested next-conversation entrypoint (post-compaction):**
+
+```bash
+# Wait for the M5/M6 parquets to land in results/, then:
+python scripts/08_make_figures.py    # render robustness/ablation panels
+python scripts/09_summarize_results.py
+# Fill paper/main.tex Results subsections "Robustness" and "Ablations"
+# Update presentation/lightning-talk.md Slide 7 with the SIR-vs-SIS finding
+```

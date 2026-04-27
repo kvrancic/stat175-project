@@ -36,7 +36,10 @@ python scripts/07_cross_campus_regression.py
 # 9. Regenerate every paper figure into paper/figures/.
 python scripts/08_make_figures.py
 
-# 10. Interactive demo.
+# 10. Headline numbers JSON + per-policy AUC summary CSV (quoted by the paper + talk).
+python scripts/09_summarize_results.py
+
+# 11. Interactive demo.
 streamlit run webapp/app.py
 ```
 
