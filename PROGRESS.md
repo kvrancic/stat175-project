@@ -113,3 +113,25 @@ python scripts/09_summarize_results.py
 # Fill paper/main.tex Results subsections "Robustness" and "Ablations"
 # Update presentation/lightning-talk.md Slide 7 with the SIR-vs-SIS finding
 ```
+
+## 2026-04-27
+
+**M5 complete — cost-function and synthetic-topology ablations.**
+
+- Cost-function ablation (R₀=3, 5% budget, mean across 5 campuses): GNN policy is **insensitive** to the input cost function (range 0.282-0.292), while cost-aware classical baselines vary 0.247-0.298 with the heavy-tailed oracle log-normal cost dominating their respective frontiers. The GNN's value is removing the hand-engineering dependency on the cost function.
+- Synthetic-topology ablation: betweenness wins on every synthetic topology (BA, config, ER, SBM, WS); hub graphs are cheap to contain (BA 0.255, config 0.269), bridge-poor graphs are not (ER 0.419, SBM 0.470, WS 0.459). The Facebook100 ranking (GNN > distance > betweenness near threshold) is therefore NOT a generic graph property.
+- Both ran with reduced n_realizations=20 and n_steps=100 per WARNINGS.md (the original 50/200 hit a 12-hour wall on the contended laptop).
+
+**M6 complete — three robustness panels saved.**
+
+- Compliance panel: GNN at 60% compliance (0.032 at R₀=1.5, 5%) still outperforms every other policy at 100% compliance (next-best 0.039). The GNN's near-threshold advantage degrades gracefully under non-compliance.
+- SIR alternative: GNN cuts final epidemic size to 0.057 vs. distance threshold 0.084, betweenness 0.103. The regime flip at R₀=3 is preserved.
+- Adversarial seeding (top-eigenvector start): GNN wins both regimes (0.023 at R₀=1.5, 0.286 at R₀=3); it overtakes betweenness in the endemic regime where it had been third-place under random seeding.
+
+**Paper status (M11 in flight).** `paper/main.tex` compiles to 15 pages with every Results, Ablation, and Robustness subsection filled. Discussion + Implementability + Limitations + Conclusion + Appendix all written. `paper/main.pdf` rebuilt and committed.
+
+**Suggested next steps (M10 — iteration rounds):**
+1. Re-run on a less contended machine (cluster, idle laptop overnight, A100 Colab) with the original `n_realizations=50` and `n_steps=200/300` to tighten bootstrap CIs. The qualitative ranking is unlikely to change but the figure CI bands will shrink.
+2. `python notebooks/01_colab_train_full_gnn.py` for full-fidelity GNN re-training (no SVD, hidden_dim=64, 200 epochs); replace `data/processed/gnn_encoders/` and re-run `scripts/04..09`.
+3. Add ten more campuses to the cross-campus regression for n=15 (still small but defensible).
+4. Solicit Austern's office-hours feedback on the implementability gap framing; iterate the discussion section.

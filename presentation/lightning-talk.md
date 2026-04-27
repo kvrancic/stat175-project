@@ -74,7 +74,7 @@ But the picture flips at R0 = 6. In a heavily endemic regime, the realistic dist
 
 [Slide 7 — Robustness + What's Next]
 
-We ran this across five Facebook100 campuses chosen for clustering-coefficient diversity, plus three robustness panels: SIR vs SIS, 100% vs 80% policy compliance, and adversarial seeding. The architecture ablation says GraphSAGE, GAT, and GCN are indistinguishable — the cost-learning framework matters, not the message-passing operator. We also have a Streamlit demo where you can pick a campus, dial R0 and the budget, and watch SIS spread on the residual graph.
+We ran this across five Facebook100 campuses chosen for clustering-coefficient diversity, plus three robustness panels. **Compliance:** the GNN at 60% compliance still beats every other policy at 100% compliance. **SIR alternative:** same regime split, even sharper. **Adversarial seeding** — start the disease at the eigenvector backbone — the GNN now wins both regimes including R0=6 where it had been third under random seeding. The architecture ablation says GraphSAGE, GAT, and GCN are indistinguishable — the cost-learning framework matters, not the message-passing operator. We also have a Streamlit demo where you can pick a campus, dial R0 and the budget, and watch SIS spread on the residual graph.
 
 The honest caveat: Facebook100 is a friendship graph, not a contact graph. We're not solving COVID. We're showing that the cost-aware framing changes which policies look "best" — and that the gap between the mathematically optimal GNN and the enforceable distance threshold is the interesting part.
 
