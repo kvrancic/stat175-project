@@ -600,10 +600,100 @@ implementability gap explicit and quantifiable.
 
 \section{Hyperparameters and reproducibility}
 \label{app:hparams}
-% [DRAFT] full config tables; pinned seeds; data download instructions.
+
+\paragraph{Master configuration.}
+All numerical hyperparameters live in \texttt{configs/default.yaml}
+and are overridden per-experiment by YAML files in
+\texttt{configs/experiments/}. The defaults used for all results in
+the main paper are: $\gamma = 0.10$, $R_0 \in \{0.8, 1.5, 3.0, 6.0\}$,
+$N = 50$ realizations per Pareto cell, $200$ simulation steps,
+$100$-step burn-in, $10$ uniformly-random initial infected vertices,
+budget grid $\{0, 0.005, 0.01, 0.02, 0.05, 0.10, 0.20, 0.40\}$ as a
+fraction of the total cost. Master seed: $42$.
+
+\paragraph{GNN architecture and training.}
+Default architecture: 2-layer GraphSAGE
+\citep{hamilton2017graphsage}, hidden dim $32$, embed dim $16$,
+dropout $0.1$. Training: Adam (lr $0.01$, weight decay $10^{-4}$),
+$40$ epochs, balanced positive/negative link-prediction loss with
+$10\%$ held-out validation pairs and rolling $\textsc{auroc}$
+monitoring. Pre-projection: TruncatedSVD with $64$ components on
+the one-hot feature matrix; the same projection is reused at
+inference time so the encoder's input distribution is consistent.
+
+\paragraph{Reproducibility.}
+A reviewer with the trained encoder cache and the Facebook100
+\texttt{.mat} files can reproduce every figure in this paper by
+running, in order, \texttt{scripts/02\_build\_features.py},
+\texttt{03\_train\_gnn.py}, \texttt{04\_run\_pareto.py},
+\texttt{05\_run\_robustness.py}, \texttt{06\_run\_ablations.py},
+\texttt{07\_cross\_campus\_regression.py},
+\texttt{08\_make\_figures.py}, and
+\texttt{09\_summarize\_results.py}. Random seeds are pinned in
+all eight scripts. Total wall-clock for the full pipeline on a
+laptop: under two hours, dominated by the SIS simulation in
+\texttt{04} and the robustness panels in \texttt{05}.
 
 \section{Additional Pareto curves}
 \label{app:additional-pareto}
-% [DRAFT] full Pareto curves for all (campus x R0) cells.
+
+Figure \ref{fig:appendix-pareto-grid} shows the Pareto frontiers
+for all $(campus, R_0)$ cells not displayed in the main text.
+Numerical values are tabulated in
+\texttt{paper/figures/main\_auc\_table.csv} and the per-cell
+parquet \texttt{results/main\_pareto.parquet}.
+
+\begin{figure}[ht]
+    \centering
+    \begin{subfigure}[t]{0.48\linewidth}
+        \includegraphics[width=\linewidth]{figures/main_pareto_R0_0.8.png}
+        \caption{$R_0 = 0.8$ (subcritical: any policy contains).}
+    \end{subfigure}\hfill
+    \begin{subfigure}[t]{0.48\linewidth}
+        \includegraphics[width=\linewidth]{figures/main_pareto_R0_3.0.png}
+        \caption{$R_0 = 3.0$ (transition between threshold and endemic).}
+    \end{subfigure}\\[\medskipamount]
+    \begin{subfigure}[t]{0.48\linewidth}
+        \includegraphics[width=\linewidth]{figures/main_pareto_R0_6.0.png}
+        \caption{$R_0 = 6.0$ (strongly endemic; classical baselines win).}
+    \end{subfigure}\hfill
+    \begin{subfigure}[t]{0.48\linewidth}
+        \includegraphics[width=\linewidth]{figures/main_ranking_R0_3.0.png}
+        \caption{Within-$(campus, R_0)$ ranking heatmap, $R_0 = 3.0$.}
+    \end{subfigure}
+    \caption{Additional Pareto curves and ranking heatmap.}
+    \label{fig:appendix-pareto-grid}
+\end{figure}
+
+\section{Cost-function and architecture ablations}
+\label{app:ablations}
+
+The ablation parquets
+(\texttt{results/ablation\_gnn\_arch.parquet},
+\texttt{ablation\_cost\_function.parquet},
+\texttt{ablation\_synthetic\_topology.parquet}) and the rendered
+figures (\texttt{paper/figures/ablation\_*.png}) describe (i)
+how the GNN advantage varies across GraphSAGE / GAT / GCN
+backbones, (ii) how the policy ranking changes as the cost
+function moves from sigmoid-dot through cosine, raw dot,
+uniform, and oracle log-normal, and (iii) whether the
+classical baselines retain their ranking on synthetic graphs
+(ER, BA, WS, configuration model, SBM) matched in size and
+density to the average campus. Detailed numerical tables are
+deferred to the supplementary material.
+
+\section{Cross-campus regression coefficients}
+\label{app:regression}
+
+Full per-$(policy, R_0, predictor)$ univariate slope, intercept,
+Pearson correlation, and small-sample $R^2$ are stored in
+\texttt{results/cross\_campus\_regression.parquet} (128 rows;
+4 policies $\times$ 4 $R_0$ $\times$ 8 predictors). The
+campus-level descriptive statistics that drive the regression
+are in \texttt{results/campus\_structural\_stats.csv}. The most
+robust qualitative finding (consistent across all four
+policies and all $R_0 \geq 1.5$) is that AUC rises with global
+clustering coefficient and edge density and falls with node
+count.
 
 \end{document}
