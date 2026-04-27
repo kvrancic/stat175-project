@@ -85,6 +85,6 @@ That's us. Thanks!
 ## Notes for the speakers
 
 - **Words per minute target = 150.** If you sound rushed, drop one sentence.
-- **Numbers to insert after M4 finishes:** the prevalence reduction at 5% budget, the AUC-rank winner per campus, and the robustness conclusion (does the ranking flip under SIR?). All live in `results/main_pareto.parquet` and `results/robustness_*.parquet`. Run `python scripts/08_make_figures.py` to refresh `paper/figures/`.
+- **M4 numbers are now in.** Headline reduction at 5% budget: GNN +0.0402 vs distance threshold +0.0222 vs betweenness +0.0171 vs random +0.0158 at R0=1.5. The talk's Slide 6 quotes the rounded versions ("4.0pp" and "2.2pp"). If a robustness result flips the story (e.g. SIR makes betweenness win at all R0), update the Slide 6 narrative. All headline numbers live in `results/summary/headline_numbers.json`; raw rows in `results/main_pareto.parquet`.
 - **What Austern cares about** (from `docs/short-brief.md`): the precision of the question, the "go beyond degree" novelty, the implementability discussion (ideal GNN vs realistic Distance Threshold), and honest limitations. Hit each of these in the talk.
 - **What Austern explicitly does NOT want:** "we ran A and B, here are numbers, the end." So Ryan's closing should preview the *discussion* (cost-aware framing changes the picture) rather than just announce a winner.
