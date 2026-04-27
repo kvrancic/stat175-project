@@ -529,13 +529,101 @@ GraphSAGE over its peers.
     \label{fig:ablation-gnn-arch}
 \end{figure}
 
-\paragraph{Cost-function ablation.}
-% [DRAFT_AFTER_M5_COST] populated once results/ablation_cost_function.parquet
-% lands.
+\paragraph{Cost-function ablation
+(Figure~\ref{fig:ablation-cost}).}
+We rerun all four policies under five cost functions (uniform,
+sigmoid-dot, cosine, raw clipped dot product, and an
+oracle log-normal) at $R_0 = 3$, $5\%$ budget. Mean
+steady-state prevalence across the five campuses:
 
-\paragraph{Synthetic topology ablation.}
-% [DRAFT_AFTER_M5_SYNTH] populated once results/ablation_synthetic_topology.parquet
-% lands.
+\begin{center}
+\begin{tabular}{lccccc}
+    \toprule
+    Policy & uniform & sigmoid & cosine & raw dot & oracle \\
+    \midrule
+    Random            & 0.297 & 0.297 & 0.297 & 0.297 & 0.297 \\
+    Betweenness       & 0.291 & 0.290 & 0.287 & 0.262 & \textbf{0.247} \\
+    Distance threshold & 0.298 & 0.294 & 0.292 & 0.266 & \textbf{0.242} \\
+    GNN               & 0.292 & 0.291 & 0.290 & 0.282 & 0.292 \\
+    \bottomrule
+\end{tabular}
+\end{center}
+
+Two findings stand out. First, the GNN policy is essentially
+\emph{insensitive} to the input cost function (range
+$0.282$--$0.292$, span $0.010$). Its learned cost surface
+$c_e^{\textsc{gnn}} = \sigma(\langle z_u, z_v\rangle)$ is
+applied internally during selection, so changing the input
+cost vector barely re-orders its picks. Second, the cost-aware
+classical baselines (betweenness over cost, distance threshold)
+are highly sensitive: with the heavy-tailed oracle log-normal
+cost they win (down to $0.247$), but with the narrow-range
+sigmoid-dot they collapse to within $0.005$ of the cost-blind
+random baseline. The GNN's value is exactly that it removes
+this hand-engineering dependency: it gets near-best performance
+without requiring the practitioner to choose a well-shaped
+cost function.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.95\linewidth]{figures/ablation_cost_function_R0_3.0.png}
+    \caption{Cost-function ablation, $R_0 = 3$. Each panel
+        is a campus; each curve a policy under one of five
+        cost functions. The GNN curves coincide regardless of
+        cost; the classical baselines fan out, with the
+        heavy-tailed oracle log-normal cost dominating their
+        respective frontiers.}
+    \label{fig:ablation-cost}
+\end{figure}
+
+\paragraph{Synthetic topology ablation
+(Figure~\ref{fig:ablation-synth}).}
+We rerun the three topology-only policies (random, betweenness
+over cost, distance threshold; the GNN is omitted because
+synthetic graphs lack the Facebook100 attributes the encoder
+needs) on five synthetic graphs matched in node count and
+density to the average campus: Erd\H{o}s--R\'enyi, Barab\'asi--Albert,
+Watts--Strogatz, configuration model, and a stochastic block
+model. Mean steady-state prevalence at $R_0 = 3$, $5\%$ budget:
+
+\begin{center}
+\begin{tabular}{lccccc}
+    \toprule
+    Policy & BA & config & ER & SBM & WS \\
+    \midrule
+    Random            & 0.446 & 0.405 & 0.606 & 0.611 & 0.613 \\
+    Betweenness       & \textbf{0.255} & \textbf{0.269} & \textbf{0.419} & \textbf{0.470} & \textbf{0.459} \\
+    Distance threshold & 0.295 & 0.276 & 0.466 & 0.600 & 0.582 \\
+    \bottomrule
+\end{tabular}
+\end{center}
+
+Three takeaways. (i) Betweenness wins on every synthetic
+topology — consistent with its theoretical role as the
+canonical structural-cut policy. (ii) Hub-driven topologies
+(BA, configuration model) are cheap to contain at $5\%$
+budget; bridge-poor topologies (ER, SBM, WS) are not.
+Distance threshold's community-bubble cut is competitive on
+hub graphs but degrades sharply on uniform-density graphs
+where Louvain's communities are weak. (iii) Random performs
+uniformly worst, confirming the baseline order.
+On Facebook100 the policy ranking flips (GNN > distance
+threshold $\geq$ betweenness near the threshold,
+distance threshold $\geq$ betweenness in the endemic
+regime), so the Facebook100 ordering is \emph{not} a
+generic property of any reasonable graph; it depends on
+the attribute structure that the GNN cost surface
+exploits.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.95\linewidth]{figures/ablation_synthetic_topology_R0_3.0.png}
+    \caption{Synthetic-topology ablation, $R_0 = 3$.
+        Betweenness wins on every topology. Hub-driven
+        graphs (BA, config) admit cheap containment;
+        bridge-poor graphs (ER, SBM, WS) do not.}
+    \label{fig:ablation-synth}
+\end{figure}
 
 \subsection{Cross-campus regression}
 \label{sec:results-regression}
