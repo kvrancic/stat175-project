@@ -64,6 +64,14 @@ A running ledger of every place we traded off rigor for tractability. Each item 
 
 **Future iteration:** generate synthetic graphs with planted block structure that mimics Facebook100 attribute-driven homophily, then re-include the GNN policy.
 
+## Cross-campus regression with five data points
+
+**What we did.** Univariate linear regressions of policy AUC against each of eight descriptive graph statistics, one per $(policy, R_0, predictor)$ cell.
+
+**Why.** With only five campuses, a multivariate fit on eight predictors is exactly determined and yields $R^2 = 1$ by construction. Univariate Pearson correlations and slopes are descriptive direction without overstating significance.
+
+**Future iteration.** Add ten more universities from the full Facebook100 set to push the cross-campus regression into a regime where multivariate inference is meaningful (n=15 lets a 4-predictor model get an honest $R^2$). The full 100-campus loader is already implemented; only `data/processed/<name>.npz` caches need to be regenerated.
+
 ## Reproducibility caveats
 
 - All seeds pinned to 42 by default. Random initial-infected sets, random negative pairs in GNN training, random pivot sampling in betweenness, and Louvain initialization all reroll deterministically off this seed.
