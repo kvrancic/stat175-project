@@ -496,9 +496,50 @@ finding rather than contradicting it.
     \label{fig:robustness-sir}
 \end{figure}
 
-\paragraph{Adversarial seeding.}
-% [DRAFT_AFTER_M6_ADVERSARIAL] populated once
-% results/robustness_adversarial_seed.parquet lands.
+\paragraph{Adversarial seeding
+(Figure~\ref{fig:robustness-adversarial}).}
+We replace the uniformly-random initial-infected set with the
+top-$k$ nodes by leading-eigenvector component magnitude (the
+worst-case structural seeding for the SIS process), keeping
+all other parameters fixed. Mean steady-state prevalence at
+$5\%$ budget across the five campuses:
+
+\begin{center}
+\begin{tabular}{lcc}
+    \toprule
+    Policy & $R_0 = 1.5$ & $R_0 = 3.0$ \\
+    \midrule
+    Random            & 0.071 & 0.312 \\
+    Betweenness       & 0.067 & 0.306 \\
+    Distance threshold & 0.063 & 0.309 \\
+    GNN               & \textbf{0.023} & \textbf{0.286} \\
+    \bottomrule
+\end{tabular}
+\end{center}
+
+Two observations. (i) Near the threshold, the GNN's advantage
+is preserved and proportionally similar to the random-seeding
+case ($0.023$ vs.\ $0.021$ under random seeding). (ii) In the
+endemic regime the policy ranking flips relative to the main
+result: under adversarial seeding the GNN now wins at
+$R_0 = 3.0$ ($0.286$ vs.\ $0.306$--$0.312$) where it had been
+narrowly second-place under random seeding. We read this as
+evidence that the GNN's learned cost is identifying edges
+that matter under \emph{structural} stress, not just under
+average-case dynamics: targeting the eigenvector backbone
+makes the right-edge-to-cut question harder, and the
+GNN's eigenvector-aware NetMelt scoring is the policy best
+positioned to answer it.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.95\linewidth]{figures/robustness_adversarial_seed_R0_1.5.png}
+    \caption{Adversarial (top-eigenvector) seeding robustness
+        panel at $R_0 = 1.5$. The GNN's near-threshold
+        advantage is preserved under worst-case structural
+        seeding.}
+    \label{fig:robustness-adversarial}
+\end{figure}
 
 \subsection{Ablations}
 \label{sec:results-ablations}
