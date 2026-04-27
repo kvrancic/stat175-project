@@ -1,0 +1,44 @@
+{
+  "compliance": [
+    {
+      "R0": 1.5,
+      "policy": "betweenness",
+      "steady_state_prevalence": 0.04672023383697357
+    },
+    {
+      "R0": 1.5,
+      "policy": "distance_threshold",
+      "steady_state_prevalence": 0.04291471087525123
+    },
+    {
+      "R0": 1.5,
+      "policy": "gnn",
+      "steady_state_prevalence": 0.026249215903432224
+    },
+    {
+      "R0": 1.5,
+      "policy": "random",
+      "steady_state_prevalence": 0.047822534968765894
+    },
+    {
+      "R0": 3.0,
+      "policy": "betweenness",
+      "steady_state_prevalence": 0.30517855663769844
+    },
+    {
+      "R0": 3.0,
+      "policy": "distance_threshold",
+      "steady_state_prevalence": 0.30839371226846646
+    },
+    {
+      "R0": 3.0,
+      "policy": "gnn",
+      "steady_state_prevalence": 0.3098055997467846
+    },
+    {
+      "R0": 3.0,
+      "policy": "random",
+      "steady_state_prevalence": 0.3103490158730443
+    }
+  ]
+}

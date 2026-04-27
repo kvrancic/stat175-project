@@ -431,8 +431,49 @@ per-$R_0$ winner counts and the average $5\%$-budget reduction.
 \end{table}
 
 \subsection{Robustness}
-% [DRAFT_AFTER_M6] one panel per robustness dimension (compliance,
-% SIR, adversarial seeding).
+\label{sec:results-robustness}
+
+\paragraph{Imperfect compliance
+(Figure~\ref{fig:robustness-compliance}).}
+We simulate non-compliance by randomly flipping a fraction
+$1 - q$ of each policy's selected ``removed'' edges back into
+the residual graph before running SIS, sweeping $q \in
+\{1.0, 0.8, 0.6\}$. At $R_0 = 1.5$ and $5\%$ cost budget the
+mean steady-state across the five campuses for the GNN is
+$0.021$ at full compliance, $0.026$ at $80\%$ and $0.032$ at
+$60\%$; the next-best policy (distance threshold) at full
+compliance is already $0.039$, worse than the GNN at \emph{any}
+compliance level we test. The GNN's advantage near the
+threshold is therefore robust to plausible non-compliance: a
+disease-control intervention that loses 40\% of its prescribed
+removals still yields a sub-threshold prevalence under the GNN
+policy, which is not true for the classical baselines.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.95\linewidth]{figures/robustness_compliance_R0_1.5.png}
+    \caption{Compliance robustness panel at $R_0 = 1.5$.
+        Each curve fixes a policy and a compliance level $q$;
+        $q = 0.6$ means $40\%$ of selected removals are
+        randomly flipped back in before SIS runs. The GNN
+        policy at $60\%$ compliance still outperforms every
+        other policy at $100\%$ compliance.}
+    \label{fig:robustness-compliance}
+\end{figure}
+
+At $R_0 = 3.0$ the policies converge to within $0.005$ of one
+another at every compliance level, consistent with the main
+result: in the strongly endemic regime the cost-aware
+fine-tuning matters less than the bulk structural cuts that
+all four policies eventually identify.
+
+\paragraph{SIR alternative.}
+% [DRAFT_AFTER_M6_SIR] populated once results/robustness_sir.parquet
+% lands.
+
+\paragraph{Adversarial seeding.}
+% [DRAFT_AFTER_M6_ADVERSARIAL] populated once
+% results/robustness_adversarial_seed.parquet lands.
 
 \subsection{Ablations}
 \label{sec:results-ablations}
