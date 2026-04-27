@@ -122,13 +122,18 @@ def cost_function_ablation(default_config: dict, ablation_config: dict) -> pd.Da
             print(f"[skip] {exc}")
             gnn_policy = None
 
+        # Build the non-GNN policies ONCE per campus so id(adjacency)-keyed
+        # caches (betweenness, Louvain partition, leading eigenvector) are
+        # reused across all cost variants. The cost varies the cost vector
+        # passed to PolicyInput but does NOT change the underlying adjacency.
+        non_gnn_policies = {
+            "random": RandomEdgeRemoval(),
+            "betweenness": EdgeBetweennessOverCost(betweenness_pivots=500),
+            "distance_threshold": DistanceThreshold(),
+        }
         for cost_name in variants:
             costs = compute_costs(cost_name, features, edges)
-            policies = {
-                "random": RandomEdgeRemoval(),
-                "betweenness": EdgeBetweennessOverCost(betweenness_pivots=500),
-                "distance_threshold": DistanceThreshold(),
-            }
+            policies = dict(non_gnn_policies)
             if gnn_policy is not None:
                 policies["gnn"] = gnn_policy
 
