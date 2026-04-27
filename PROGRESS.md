@@ -65,3 +65,25 @@ python scripts/08_make_figures.py          # render every paper figure
 # Then update presentation/lightning-talk.md with real numbers (M9 finalization)
 # Then fill paper/main.tex sections (M11)
 ```
+
+**M4 complete (2026-04-26 21:22).** `results/main_pareto.parquet` (640 rows) saved. 8 main figures + AUC table in `paper/figures/`. Headline summary in `results/summary/headline_numbers.json` and `results/summary/main_pareto_summary.csv`.
+
+**Headline finding (logged for the talk + paper Discussion section):**
+
+| R₀  | Per-campus winner counts (5 campuses)                   |
+|-----|---------------------------------------------------------|
+| 0.8 | GNN: 5 / 5                                              |
+| 1.5 | GNN: 5 / 5                                              |
+| 3.0 | GNN: 3, Distance Threshold: 2                           |
+| 6.0 | Distance Threshold: 3, Betweenness: 2                   |
+
+Mean steady-state reduction at 5 % budget (vs no removal):
+
+| R₀  | Random  | Betweenness | Distance Threshold | **GNN**   |
+|-----|---------|-------------|--------------------|-----------|
+| 0.8 | +0.0000 | +0.0000     | +0.0000            | +0.0000   |
+| 1.5 | +0.0158 | +0.0171     | +0.0222            | **+0.0402** |
+| 3.0 | +0.0154 | +0.0217     | +0.0180            | +0.0169   |
+| 6.0 | +0.0125 | +0.0223     | +0.0129            | +0.0056   |
+
+Story: the **learned cost dominates near the epidemic threshold** (R₀ ≤ 1.5), where small structural differences matter most. In the strongly endemic regime (R₀ = 6) classical baselines (betweenness, community-bubble) win because the graph is too saturated for cost-aware fine-tuning to matter. This is the "when does the GNN help, and when does it not?" answer the discussion section needs.

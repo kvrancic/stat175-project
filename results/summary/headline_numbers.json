@@ -1,0 +1,100 @@
+{
+  "per_R0_winner": {
+    "0.8": {
+      "gnn": 5
+    },
+    "1.5": {
+      "gnn": 5
+    },
+    "3.0": {
+      "gnn": 3,
+      "distance_threshold": 2
+    },
+    "6.0": {
+      "distance_threshold": 3,
+      "betweenness": 2
+    }
+  },
+  "budget_5pct_reduction": [
+    {
+      "R0": 0.8,
+      "policy": "betweenness",
+      "reduction": 1.693369239211889e-05
+    },
+    {
+      "R0": 0.8,
+      "policy": "distance_threshold",
+      "reduction": 8.954614035479917e-06
+    },
+    {
+      "R0": 0.8,
+      "policy": "gnn",
+      "reduction": 2.0534905211577706e-05
+    },
+    {
+      "R0": 0.8,
+      "policy": "random",
+      "reduction": 2.239995018128107e-06
+    },
+    {
+      "R0": 1.5,
+      "policy": "betweenness",
+      "reduction": 0.017104135170004482
+    },
+    {
+      "R0": 1.5,
+      "policy": "distance_threshold",
+      "reduction": 0.022174050192067377
+    },
+    {
+      "R0": 1.5,
+      "policy": "gnn",
+      "reduction": 0.04018806911313938
+    },
+    {
+      "R0": 1.5,
+      "policy": "random",
+      "reduction": 0.015751283099024436
+    },
+    {
+      "R0": 3.0,
+      "policy": "betweenness",
+      "reduction": 0.021677903222248718
+    },
+    {
+      "R0": 3.0,
+      "policy": "distance_threshold",
+      "reduction": 0.01802060063558062
+    },
+    {
+      "R0": 3.0,
+      "policy": "gnn",
+      "reduction": 0.016853535136575108
+    },
+    {
+      "R0": 3.0,
+      "policy": "random",
+      "reduction": 0.015425663179340809
+    },
+    {
+      "R0": 6.0,
+      "policy": "betweenness",
+      "reduction": 0.022287310159018393
+    },
+    {
+      "R0": 6.0,
+      "policy": "distance_threshold",
+      "reduction": 0.012861858394207382
+    },
+    {
+      "R0": 6.0,
+      "policy": "gnn",
+      "reduction": 0.00555873062660599
+    },
+    {
+      "R0": 6.0,
+      "policy": "random",
+      "reduction": 0.01245568621435863
+    }
+  ]
+}
