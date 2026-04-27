@@ -467,7 +467,21 @@ The descriptive question lurking under the cost-aware reframe is
 ``which segregation metric matters?'', and the cross-campus
 regression suggests an answer: at the granularity of campuses,
 \emph{global} clustering and density predict performance better
-than \emph{attribute-level} homophily indices on dorm or year.
+than \emph{attribute-level} homophily indices on dorm or year
+(Figure~\ref{fig:cross-campus-regression}).
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.95\linewidth]{figures/cross_campus_regression.png}
+    \caption{Cross-campus Pearson correlation between each
+        policy's Pareto-AUC and each campus structural statistic,
+        per $R_0$. Red = positive; blue = negative. The AUC of
+        every policy correlates positively with global clustering
+        coefficient and density and negatively with node count
+        once $R_0 \geq 1.5$. With only five campuses these are
+        descriptive directions, not significance tests.}
+    \label{fig:cross-campus-regression}
+\end{figure}
 This is consistent with the homophily-percolation theory of
 \citet{rizi2025homophily}, where the relevant assortativity for
 epidemic-style cascades is the structural one, not the categorical

@@ -17,7 +17,12 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT / "src"))
 sys.path.insert(0, str(REPO_ROOT))
 
-from stat175.viz.plots import auc_table, pareto_frontier, ranking_heatmap  # noqa: E402
+from stat175.viz.plots import (  # noqa: E402
+    auc_table,
+    pareto_frontier,
+    ranking_heatmap,
+    regression_heatmap,
+)
 
 RESULTS_DIR = REPO_ROOT / "results"
 FIGURES_DIR = REPO_ROOT / "paper" / "figures"
@@ -98,6 +103,17 @@ def main() -> int:
             figure = pareto_frontier(rdf, R0=float(R0), output_path=out)
             figure.clf()
             print(f"[fig] {out}")
+
+    # Cross-campus regression heatmap (only if scripts/07 has run).
+    regression_path = RESULTS_DIR / "cross_campus_regression.parquet"
+    if regression_path.exists():
+        rdf = pd.read_parquet(regression_path)
+        out = FIGURES_DIR / "cross_campus_regression.png"
+        figure = regression_heatmap(rdf, output_path=out)
+        figure.clf()
+        print(f"[fig] {out}")
+    else:
+        print(f"[skip] {regression_path} not found")
 
     return 0
 

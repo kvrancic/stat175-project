@@ -109,6 +109,51 @@ def ranking_heatmap(
     return figure
 
 
+def regression_heatmap(
+    regression_df: pd.DataFrame,
+    output_path: str | Path | None = None,
+) -> plt.Figure:
+    """Heatmap of Pearson r per (policy x predictor) at one R0 per facet.
+
+    `regression_df` must have columns {policy, R0, predictor, pearson_r}
+    as produced by stat175.eval.regression.fit_per_policy.
+    """
+    R0_values = sorted(regression_df["R0"].unique())
+    figure, axes = plt.subplots(
+        1, len(R0_values), figsize=(4.5 * len(R0_values), 4), squeeze=False
+    )
+    for column_index, R0 in enumerate(R0_values):
+        sub = regression_df[regression_df["R0"] == R0]
+        pivot = sub.pivot(index="predictor", columns="policy", values="pearson_r")
+        pivot = pivot.reindex(
+            ["random", "betweenness", "distance_threshold", "gnn"], axis=1
+        )
+        axis = axes[0][column_index]
+        sns.heatmap(
+            pivot,
+            annot=True,
+            fmt=".2f",
+            cmap="RdBu_r",
+            center=0,
+            vmin=-1,
+            vmax=1,
+            cbar=column_index == len(R0_values) - 1,
+            ax=axis,
+        )
+        axis.set_title(f"R0 = {R0}")
+        axis.set_xlabel("")
+        if column_index > 0:
+            axis.set_ylabel("")
+    figure.suptitle(
+        "Cross-campus Pearson correlation: policy AUC vs. structural statistic",
+        y=1.02,
+    )
+    figure.tight_layout()
+    if output_path is not None:
+        figure.savefig(output_path, dpi=150, bbox_inches="tight")
+    return figure
+
+
 def auc_table(df: pd.DataFrame, metric: str = "steady_state_prevalence") -> pd.DataFrame:
     """Return a (policy, campus, R0) AUC table."""
     return (
