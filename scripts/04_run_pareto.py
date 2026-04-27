@@ -103,8 +103,25 @@ def main() -> int:
     n_seeds = int(config["sis"]["n_seeds"])
     seed = int(config["seed"])
 
+    out_path = args.out
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    checkpoint_dir = out_path.parent / "checkpoints" / out_path.stem
+    checkpoint_dir.mkdir(parents=True, exist_ok=True)
+
+    # Reload any campuses that already have a per-campus checkpoint.
     all_rows: list[pd.DataFrame] = []
+    completed_campuses: set[str] = set()
+    for existing in sorted(checkpoint_dir.glob("*.parquet")):
+        partial = pd.read_parquet(existing)
+        all_rows.append(partial)
+        completed_campuses.update(partial["campus"].unique())
+    if completed_campuses:
+        print(f"[resume] reloaded {len(completed_campuses)} cached campuses: {sorted(completed_campuses)}")
+
     for campus_name in campuses:
+        if campus_name in completed_campuses:
+            print(f"[skip] {campus_name} already in checkpoint")
+            continue
         cache = load_cache(campus_name)
         adjacency = cache["adjacency"]
         features = cache["features"]
@@ -131,6 +148,7 @@ def main() -> int:
                 print(f"  [warn] {exc}; skipping gnn for {campus_name}")
                 policies.pop("gnn", None)
 
+        campus_rows: list[pd.DataFrame] = []
         for policy_name in policy_names:
             policy = policies.get(policy_name)
             if policy is None:
@@ -154,14 +172,21 @@ def main() -> int:
                 df = sweep_pareto(policy, adjacency, edges, costs, sweep)
                 elapsed = time.time() - start
                 df["cost_function"] = cost_fn_name
+                campus_rows.append(df)
                 all_rows.append(df)
                 print(
                     f"  {policy_name:18s} R0={R0:>4}: {elapsed:5.1f}s, "
-                    f"steady@5%={df.loc[df['budget_fraction'] == 0.05, 'steady_state_prevalence'].mean():.3f}"
+                    f"steady@5%={df.loc[df['budget_fraction'] == 0.05, 'steady_state_prevalence'].mean():.3f}",
+                    flush=True,
                 )
 
-    out_path = args.out
-    out_path.parent.mkdir(parents=True, exist_ok=True)
+        # Crash-safe checkpoint: write this campus's rows to its own parquet.
+        if campus_rows:
+            campus_df = pd.concat(campus_rows, ignore_index=True)
+            checkpoint_path = checkpoint_dir / f"{campus_name}.parquet"
+            campus_df.to_parquet(checkpoint_path, index=False)
+            print(f"  [checkpoint] {checkpoint_path}", flush=True)
+
     combined = pd.concat(all_rows, ignore_index=True)
     combined.to_parquet(out_path, index=False)
     print(f"\n[saved] {out_path}  ({len(combined)} rows)")

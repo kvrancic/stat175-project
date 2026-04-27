@@ -23,6 +23,7 @@ data/processed/
 results/*
 !results/.gitkeep
 !results/summary/
+!results/checkpoints/
 
 # Jupyter
 .ipynb_checkpoints/
