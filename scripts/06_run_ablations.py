@@ -74,6 +74,8 @@ def gnn_arch_ablation(default_config: dict, ablation_config: dict) -> pd.DataFra
             res = train_link_prediction(adjacency, features, gnn_cfg, training_cfg)
             print(f"  trained in {time.time() - start:.1f}s; val AUROC={res.val_aurocs[-1]:.4f}")
 
+            # GNNPolicy reads encoder.projection_matrix; mirror what load_encoder does.
+            res.encoder.projection_matrix = res.projection_matrix
             policy = GNNPolicy(res.encoder, features, device="cpu")
             for R0 in R0_grid:
                 beta = R0 * gamma / lam
