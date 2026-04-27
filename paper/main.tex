@@ -174,14 +174,71 @@ ablation in Section~\ref{sec:results}.
 
 \section{Related work}
 \label{sec:related}
-% [DRAFT] Anchor papers from useful-readings-A.md sec 3 (Tong/NetMelt
-% 2012, Saha/GreedyWalk 2015, Yi 2022 supermodularity) and frontier from
-% useful-readings-B.md sec 1-2 (Li-Eliassi-Rad SDM 2024, MIND 2025,
-% Liu KDD 2024 GNN+epidemic survey, Block et al. 2020 social
-% distancing strategies, Rizi/Stegehuis/Kivela Nature Comm 2025
-% homophily-and-percolation). For each anchor cite arxiv id from
-% the readings, fetched via the arxiv MCP per Karlo's note in the
-% approved plan.
+
+\paragraph{Spectral epidemic threshold and edge removal.}
+\citet{wang2003threshold} showed that the SIS phase transition
+on an arbitrary contact graph is governed by the leading
+eigenvalue of the adjacency matrix, with critical ratio
+$\tau_c = 1 / \lambda_1(A)$. \citet{pastor2001epidemic} had
+earlier shown that scale-free degree distributions push
+$\lambda_1$ to infinity in the limit, and \citet{newman2002percolation}
+connected the SIS-like cascade to percolation theory. The
+optimization side, ``what is the best set of $k$ edges to remove
+to most reduce $\lambda_1(A)$'', was crystallized in NetMelt
+\citep{tong2012netmelt}: a first-order matrix-perturbation
+argument shows that removing edge $(i, j)$ reduces $\lambda_1$
+by approximately $2 u_i u_j$ where $u$ is the leading
+eigenvector, and greedy ranking by this score is provably
+near-optimal. \citet{saha2015greedywalk} extended this to
+weighted graphs and gave approximation guarantees, and
+\citet{yi2022supermodular} showed that the same edge-deletion
+problem under SIR is supermodular and admits a $1 - 1/e$
+approximation by a refined greedy. All of these treat edges as
+indivisible units; the cost-aware reframe we study generalizes
+to a per-edge weight that is a function of the endpoints'
+attributes.
+
+\paragraph{Cost-aware and learning-aware variants.}
+\citet{li2024frankwolfe} pose a closely related problem:
+optimal weighted-network intervention via edge centrality, with
+costs derived externally rather than from features.
+\citet{tian2025mind} (MIND) learn to dismantle networks
+end-to-end with a GNN, but their dismantling target is
+fragmentation rather than epidemic threshold, and their cost is
+uniform. The recent survey \citep{liu2024gnnepidemic} catalogues
+GNN-driven epidemic modeling, but the GNN there learns the
+\emph{forward} dynamics (predicting prevalence) rather than the
+\emph{intervention} (selecting edges). Our contribution is the
+combination: a GNN whose self-supervised link-prediction
+training on the friendship graph induces a continuous cost
+surface that is then plugged into a NetMelt-style spectral
+ranking, on the cost-budgeted version of the edge-removal
+problem.
+
+\paragraph{Real-world enforceability.}
+The COVID-era literature on social-network interventions
+\citep{block2020socialdistancing} emphasizes that the
+mathematically optimal intervention is rarely the
+politically enforceable one; ``stay within your social bubble''
+turns out to be a competitive heuristic in many regimes. This
+informs our distance-threshold policy and the implementability
+gap that Section~\ref{sec:discussion} quantifies.
+\citet{rizi2025homophily} provide the structural-homophily
+theory that connects categorical attribute homophily (which
+the cost proxy uses) with epidemic-style percolation cascades
+(which the SIS process embodies); their finding that
+within-group and across-group homophily decompose
+non-trivially is what motivates our cross-campus regression
+in Section~\ref{sec:results-regression}.
+
+\paragraph{Facebook100 dataset.}
+We use the canonical Facebook100 dataset
+\citep{traud2012facebook100} of 100 university friendship
+graphs from a 2005 snapshot. To our knowledge no prior work has
+benchmarked cost-aware containment policies on this dataset
+under SIS dynamics; the closest prior is
+\citet{block2020socialdistancing}, which simulates social-
+distancing strategies on synthetic small-world graphs.
 
 \section{Methods}
 \label{sec:methods}
