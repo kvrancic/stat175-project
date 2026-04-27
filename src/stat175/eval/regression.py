@@ -92,7 +92,16 @@ def fit_per_policy(
     auc_table: pd.DataFrame,
     stats_by_campus: dict[str, StructuralStats],
 ) -> pd.DataFrame:
-    """Linear regression of AUC ~ structural stats, one fit per (policy, R0)."""
+    """Univariate AUC ~ predictor fits, one per (policy, R0, predictor).
+
+    With only 5 campuses a multivariate fit on 8 predictors is exactly
+    determined and uninformative (R^2 = 1 by construction). Reporting the
+    *univariate* slope and Pearson correlation per predictor gives a
+    defensible qualitative direction ("policy AUC tends to rise with
+    modularity") that the paper's discussion can lean on without
+    overstating significance. n_observations = 5 throughout, so all
+    inferences are explicitly small-sample.
+    """
     feature_keys = (
         "n_nodes",
         "density",
@@ -105,30 +114,37 @@ def fit_per_policy(
     )
     rows = []
     for (policy, R0), group in auc_table.groupby(["policy", "R0"]):
-        x_rows = []
-        y_rows = []
-        for _, record in group.iterrows():
-            stats = stats_by_campus.get(record["campus"])
-            if stats is None:
-                continue
-            x_rows.append([getattr(stats, key) for key in feature_keys])
-            y_rows.append(record["auc"])
-        if len(x_rows) < 3:
+        campus_to_auc = dict(zip(group["campus"], group["auc"]))
+        common_campuses = [c for c in campus_to_auc if c in stats_by_campus]
+        if len(common_campuses) < 3:
             continue
-        x = np.asarray(x_rows)
-        y = np.asarray(y_rows)
-        model = LinearRegression()
-        model.fit(x, y)
-        for key, coefficient in zip(feature_keys, model.coef_):
+        y = np.array([campus_to_auc[c] for c in common_campuses], dtype=float)
+        for key in feature_keys:
+            x = np.array(
+                [getattr(stats_by_campus[c], key) for c in common_campuses], dtype=float
+            )
+            if np.allclose(x.std(), 0.0) or np.allclose(y.std(), 0.0):
+                slope = float("nan")
+                intercept = float("nan")
+                pearson_r = float("nan")
+                r2 = float("nan")
+            else:
+                model = LinearRegression()
+                model.fit(x.reshape(-1, 1), y)
+                slope = float(model.coef_[0])
+                intercept = float(model.intercept_)
+                r2 = float(model.score(x.reshape(-1, 1), y))
+                pearson_r = float(np.corrcoef(x, y)[0, 1])
             rows.append(
                 {
                     "policy": policy,
                     "R0": float(R0),
                     "predictor": key,
-                    "coefficient": float(coefficient),
-                    "intercept": float(model.intercept_),
-                    "R2": float(model.score(x, y)),
-                    "n_observations": int(len(y_rows)),
+                    "slope": slope,
+                    "intercept": intercept,
+                    "pearson_r": pearson_r,
+                    "R2": r2,
+                    "n_observations": int(len(y)),
                 }
             )
     return pd.DataFrame(rows)

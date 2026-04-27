@@ -231,6 +231,10 @@ def main() -> int:
     )
     parser.add_argument("--force", action="store_true", help="Rerun even if the parquet exists")
     args = parser.parse_args()
+    try:
+        sys.stdout.reconfigure(line_buffering=True)  # type: ignore[attr-defined]
+    except Exception:
+        pass
 
     default_config = yaml.safe_load((REPO_ROOT / "configs" / "default.yaml").read_text())
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)

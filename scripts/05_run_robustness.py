@@ -61,10 +61,15 @@ def compliance_panel(default_config: dict, panel_config: dict) -> pd.DataFrame:
         features = cache["features"]
         lam = spectral_radius(adjacency)
         gamma = float(default_config["sis"]["gamma"])
+        # Build policies ONCE per campus so per-policy id(adjacency)-keyed caches
+        # (betweenness, GNN embeddings, leading eigenvector) are reused across
+        # the inner compliance/R0/budget loops. Otherwise each iteration was
+        # paying the full betweenness/eigenvector precompute again.
+        policies_for_campus = policies_for(campus_name, features)
         for compliance in panel_config["compliance_levels"]:
             for R0 in panel_config["sis"]["R0_grid"]:
                 beta = R0 * gamma / lam
-                for policy_name, policy in policies_for(campus_name, features).items():
+                for policy_name, policy in policies_for_campus.items():
                     for budget_fraction in panel_config["budget_fractions"]:
                         budget = budget_fraction * float(costs.sum())
                         inputs = PolicyInput(adjacency, edges, costs, budget, seed=int(default_config["seed"]))
@@ -122,9 +127,11 @@ def sir_panel(default_config: dict, panel_config: dict) -> pd.DataFrame:
         gamma = float(panel_config["sir"]["gamma"]) if "gamma" in panel_config.get("sir", {}) else float(
             default_config["sir"]["gamma"]
         )
+        # Build policies once per campus so per-policy precomputes are cached.
+        policies_for_campus = policies_for(campus_name, features)
         for R0 in panel_config["sir"]["R0_grid"]:
             beta = R0 * gamma / lam
-            for policy_name, policy in policies_for(campus_name, features).items():
+            for policy_name, policy in policies_for_campus.items():
                 for budget_fraction in panel_config["budget_fractions"]:
                     budget = budget_fraction * float(costs.sum())
                     inputs = PolicyInput(adjacency, edges, costs, budget, seed=int(default_config["seed"]))
@@ -184,9 +191,11 @@ def adversarial_seed_panel(default_config: dict, panel_config: dict) -> pd.DataF
         _, eigenvectors = eigsh(adjacency.astype(np.float64), k=1, which="LA")
         adversarial_seeds = np.argsort(-np.abs(eigenvectors[:, 0]))[:n_seeds].astype(np.int64)
 
+        # Build policies once per campus so per-policy precomputes are cached.
+        policies_for_campus = policies_for(campus_name, features)
         for R0 in panel_config["sis"]["R0_grid"]:
             beta = R0 * gamma / lam
-            for policy_name, policy in policies_for(campus_name, features).items():
+            for policy_name, policy in policies_for_campus.items():
                 for budget_fraction in panel_config["budget_fractions"]:
                     budget = budget_fraction * float(costs.sum())
                     inputs = PolicyInput(adjacency, edges, costs, budget, seed=int(default_config["seed"]))
@@ -237,6 +246,12 @@ def main() -> int:
     )
     parser.add_argument("--force", action="store_true", help="Rerun even if the parquet exists")
     args = parser.parse_args()
+    # Force line-buffered stdout so progress prints appear in real time when
+    # the script is launched under `tee` or piped to a log file.
+    try:
+        sys.stdout.reconfigure(line_buffering=True)  # type: ignore[attr-defined]
+    except Exception:
+        pass
 
     default_config = yaml.safe_load((REPO_ROOT / "configs" / "default.yaml").read_text())
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
