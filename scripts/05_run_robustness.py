@@ -235,6 +235,7 @@ def main() -> int:
         default="all",
         choices=("all", "compliance", "sir", "adversarial"),
     )
+    parser.add_argument("--force", action="store_true", help="Rerun even if the parquet exists")
     args = parser.parse_args()
 
     default_config = yaml.safe_load((REPO_ROOT / "configs" / "default.yaml").read_text())
@@ -252,6 +253,10 @@ def main() -> int:
     def run_one(name: str, builder, config_path: Path, out_path: Path):
         cfg = yaml.safe_load(config_path.read_text())
         cfg = deep_merge(cfg, default_config)
+        # Skip if a finished parquet exists and the user did not pass --force.
+        if out_path.exists() and not getattr(args, "force", False):
+            print(f"[skip] {out_path} already exists; pass --force to rerun")
+            return
         df = builder(default_config, cfg)
         df.to_parquet(out_path, index=False)
         print(f"\n[saved] {out_path}  ({len(df)} rows)")
