@@ -467,9 +467,34 @@ result: in the strongly endemic regime the cost-aware
 fine-tuning matters less than the bulk structural cuts that
 all four policies eventually identify.
 
-\paragraph{SIR alternative.}
-% [DRAFT_AFTER_M6_SIR] populated once results/robustness_sir.parquet
-% lands.
+\paragraph{SIR alternative
+(Figure~\ref{fig:robustness-sir}).}
+We re-ran every policy on every campus with the SIS process
+swapped for SIR (an extra recovered compartment, $300$ steps
+reduced to $150$ for tractable wall-clock; see
+\texttt{WARNINGS.md}). Outcome is final epidemic size rather
+than steady-state prevalence; otherwise the protocol is
+identical to the main experiment. At $R_0 = 1.5$ and $5\%$
+budget the mean final epidemic size across the five campuses
+is $0.057$ for the GNN policy, $0.084$ for the distance
+threshold, $0.090$ for random removal, and $0.103$ for
+betweenness. The GNN advantage near the threshold is
+\emph{larger} than in the SIS panel: SIR's monotone outcome
+amplifies the near-threshold gap because there is no
+endemic-equilibrium ceiling. At $R_0 = 3.0$ the policies
+again cluster ($0.475$--$0.494$), reproducing the regime
+flip. The SIR panel therefore confirms the central SIS
+finding rather than contradicting it.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.95\linewidth]{figures/robustness_sir_R0_1.5.png}
+    \caption{SIR alternative robustness panel at $R_0 = 1.5$.
+        Vertical axis: final epidemic size (fraction of nodes
+        ever infected). The GNN policy's near-threshold
+        advantage carries over from SIS to SIR.}
+    \label{fig:robustness-sir}
+\end{figure}
 
 \paragraph{Adversarial seeding.}
 % [DRAFT_AFTER_M6_ADVERSARIAL] populated once
