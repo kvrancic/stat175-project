@@ -92,6 +92,68 @@ def main() -> int:
     )
     print(reduction_pivot.to_string(float_format=lambda x: f"{x:+.4f}"))
 
+    # Optional summaries: only if the robustness/ablation parquets exist.
+    robustness_summary: dict = {}
+    for panel_path, panel_key in (
+        (RESULTS_DIR / "robustness_compliance.parquet", "compliance"),
+        (RESULTS_DIR / "robustness_sir.parquet", "sir"),
+        (RESULTS_DIR / "robustness_adversarial_seed.parquet", "adversarial_seed"),
+    ):
+        if not panel_path.exists():
+            continue
+        rdf = pd.read_parquet(panel_path)
+        # Mean steady-state at 5% budget per (R0, policy).
+        five_pct = rdf[np.isclose(rdf["budget_fraction"], 0.05)]
+        agg = (
+            five_pct.groupby(["R0", "policy"])["steady_state_prevalence"]
+            .mean()
+            .reset_index()
+            .to_dict(orient="records")
+        )
+        robustness_summary[panel_key] = agg
+        print(f"\n=== {panel_key.upper()} panel: mean steady-state at 5% budget ===")
+        for r in agg:
+            print(
+                f"  R0={r['R0']:>4} {r['policy']:>20}: "
+                f"steady={r['steady_state_prevalence']:.4f}"
+            )
+
+    if robustness_summary:
+        out_path = SUMMARY_DIR / "robustness_headline.json"
+        out_path.write_text(json.dumps(robustness_summary, indent=2, default=str))
+        print(f"\n[saved] {out_path}")
+
+    ablation_summary: dict = {}
+    for panel_path, panel_key in (
+        (RESULTS_DIR / "ablation_gnn_arch.parquet", "gnn_arch"),
+        (RESULTS_DIR / "ablation_cost_function.parquet", "cost_function"),
+        (RESULTS_DIR / "ablation_synthetic_topology.parquet", "synthetic_topology"),
+    ):
+        if not panel_path.exists():
+            continue
+        rdf = pd.read_parquet(panel_path)
+        five_pct = rdf[np.isclose(rdf["budget_fraction"], 0.05)]
+        # Group by the appropriate dimension column.
+        groupby_cols = ["R0"]
+        for candidate in ("arch", "cost_function", "topology", "policy"):
+            if candidate in rdf.columns:
+                groupby_cols.append(candidate)
+        agg = (
+            five_pct.groupby(groupby_cols)["steady_state_prevalence"]
+            .mean()
+            .reset_index()
+            .to_dict(orient="records")
+        )
+        ablation_summary[panel_key] = agg
+        print(f"\n=== {panel_key.upper()} ablation: mean steady-state at 5% budget ===")
+        for r in agg:
+            print(f"  {r}")
+
+    if ablation_summary:
+        out_path = SUMMARY_DIR / "ablation_headline.json"
+        out_path.write_text(json.dumps(ablation_summary, indent=2, default=str))
+        print(f"\n[saved] {out_path}")
+
     return 0
 
 

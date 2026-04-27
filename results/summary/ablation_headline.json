@@ -1,0 +1,22 @@
+{
+  "gnn_arch": [
+    {
+      "R0": 3.0,
+      "arch": "gat",
+      "policy": "gnn_gat",
+      "steady_state_prevalence": 0.30591601807168123
+    },
+    {
+      "R0": 3.0,
+      "arch": "gcn",
+      "policy": "gnn_gcn",
+      "steady_state_prevalence": 0.3061404901661011
+    },
+    {
+      "R0": 3.0,
+      "arch": "graphsage",
+      "policy": "gnn_graphsage",
+      "steady_state_prevalence": 0.3057822210740696
+    }
+  ]
+}
