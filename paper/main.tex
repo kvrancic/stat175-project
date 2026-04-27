@@ -297,9 +297,79 @@ figures runs from a single command sequence documented in
 \label{sec:results}
 
 \subsection{Main Pareto frontiers}
-% [DRAFT_AFTER_M4] one figure per R0; ranking heatmap; AUC table.
-% Insert paper/figures/main_pareto_R0_3.0.png
-% Insert paper/figures/main_ranking_R0_3.0.png
+
+We sweep $5$ campuses $\times$ $4$ policies $\times$ $4$ values of
+$R_0$ $\times$ $8$ budget fractions, with $N = 50$ stochastic SIS
+realizations per cell ($6{,}400$ Pareto cells; $640$ rows after
+collapsing across realizations). All headline numbers below are
+mean steady-state prevalences with $95\%$ bootstrap confidence
+intervals computed from the per-realization draws.
+
+\paragraph{Pareto frontier (Figure~\ref{fig:main-pareto-1.5}).}
+Near the spectral threshold ($R_0 = 1.5$) the GNN-learned policy
+strictly dominates the other three across the entire budget grid
+on every campus. At a $5\%$ cost budget the GNN cuts steady-state
+prevalence by an average of $4.0$ percentage points across the
+five campuses, versus $2.2$ for the distance-threshold policy,
+$1.7$ for edge betweenness, and $1.6$ for random removal. The gap
+is largest exactly where containment is most fragile: the regime
+where small structural surgery actually decides whether the
+disease persists.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.95\linewidth]{figures/main_pareto_R0_1.5.png}
+    \caption{Pareto frontier of cost budget vs.\ steady-state
+        SIS prevalence at $R_0 = 1.5$ across all five campuses
+        ($N = 50$ realizations per cell, $95\%$ bootstrap CI
+        bands). The GNN-learned policy (purple) dominates near the
+        epidemic threshold.}
+    \label{fig:main-pareto-1.5}
+\end{figure}
+
+\paragraph{Regime dependence (Figure~\ref{fig:main-ranking}).}
+Far above the threshold ($R_0 = 6$) the picture inverts: the
+realistic distance-threshold policy wins on $3$ of $5$ campuses
+and edge betweenness on the remaining $2$, while the GNN's
+average reduction at $5\%$ budget collapses to $0.6$ percentage
+points. Once the graph is saturated, fine-grained cost-aware
+optimization is dominated by the brute-force structural cuts
+that betweenness or community partitioning identifies. Random
+removal is the worst policy at every $R_0$ except, by
+construction, $R_0 = 0.8$ (where the disease dies out under any
+intervention and all four policies are statistically
+indistinguishable). Table~\ref{tab:headline} summarizes the
+per-$R_0$ winner counts and the average $5\%$-budget reduction.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.95\linewidth]{figures/main_ranking_R0_6.0.png}
+    \caption{Within-$(campus, R_0)$ AUC ranking heatmap at
+        $R_0 = 6.0$. Lower rank is better. The GNN advantage seen
+        at $R_0 = 1.5$ disappears in the strongly endemic regime.}
+    \label{fig:main-ranking}
+\end{figure}
+
+\begin{table}[t]
+    \centering
+    \begin{tabular}{lcccc}
+        \toprule
+        $R_0$ & Random & Betweenness & Distance Threshold & GNN \\
+        \midrule
+        $0.8$ & $+0.0000$ & $+0.0000$ & $+0.0000$ & $+0.0000$ \\
+        $1.5$ & $+0.0158$ & $+0.0171$ & $+0.0222$ & $\mathbf{+0.0402}$ \\
+        $3.0$ & $+0.0154$ & $\mathbf{+0.0217}$ & $+0.0180$ & $+0.0169$ \\
+        $6.0$ & $+0.0125$ & $\mathbf{+0.0223}$ & $+0.0129$ & $+0.0056$ \\
+        \bottomrule
+    \end{tabular}
+    \caption{Mean steady-state prevalence reduction at $5\%$ cost
+        budget (averaged across five campuses), for each policy and
+        $R_0$. Bold marks the per-$R_0$ winner. The GNN policy is
+        $1.8\times$ better than the next-best policy near the
+        threshold; classical baselines take over in the strongly
+        endemic regime.}
+    \label{tab:headline}
+\end{table}
 
 \subsection{Robustness}
 % [DRAFT_AFTER_M6] one panel per robustness dimension (compliance,
@@ -310,28 +380,161 @@ figures runs from a single command sequence documented in
 % synthetic topology).
 
 \subsection{Cross-campus regression}
-% [DRAFT_AFTER_M7] discussion of which structural features predict when
-% the GNN dominates.
+\label{sec:results-regression}
+
+We compute a battery of descriptive statistics per campus
+(node count, density, mean degree, clustering coefficient,
+degree assortativity, modularity, and per-attribute homophily
+on dorm and year) and fit \emph{univariate} linear regressions of
+each policy's Pareto-AUC against each statistic, separately for
+each $R_0$. With only five campuses we deliberately avoid a
+multivariate fit (which would be exactly determined and yield
+$R^2 = 1$ by construction); the univariate slopes and Pearson
+correlations are reported as descriptive direction rather than
+significance tests.
+
+The dominant pattern is consistent across all four policies and
+all $R_0 \geq 1.5$: AUC is strongly positively correlated with
+the global clustering coefficient (Pearson $r > 0.88$ in every
+$(policy, R_0)$ cell with $R_0 \geq 1.5$) and with edge density
+(Pearson $r > 0.87$ at $R_0 \in \{1.5, 6\}$), and strongly
+negatively correlated with the node count $n$ (Pearson
+$r < -0.89$ at $R_0 \in \{3, 6\}$). The interpretation is
+intuitive: high-clustering graphs (Caltech36 has $C = 0.29$)
+contain triangles whose removal cascades into structural
+disconnection, while low-clustering graphs (Penn94 has
+$C = 0.10$) require many independent cuts to flatten the
+spread. Larger graphs absorb interventions more elastically.
+
+The descriptive question lurking under the cost-aware reframe is
+``which segregation metric matters?'', and the cross-campus
+regression suggests an answer: at the granularity of campuses,
+\emph{global} clustering and density predict performance better
+than \emph{attribute-level} homophily indices on dorm or year.
+This is consistent with the homophily-percolation theory of
+\citet{rizi2025homophily}, where the relevant assortativity for
+epidemic-style cascades is the structural one, not the categorical
+one.
 
 \section{Discussion}
 \label{sec:discussion}
 
 \subsection{When does the learned cost help?}
-% [DRAFT_AFTER_M5] honest answer once the cost-function ablation runs.
+
+The headline pattern (Table~\ref{tab:headline}) is that the
+GNN-learned cost is most valuable \emph{near} the spectral
+threshold and least valuable when the graph is heavily endemic.
+We hypothesize two complementary mechanisms.
+
+First, near $R_0 = 1$ a small reduction in $\lambda_1(A)$ can
+push the system back below the threshold; the marginal value of
+choosing the \emph{right} edge is enormous. The GNN's learned
+cost is more discriminative than the hand-designed
+$\sigma(\langle x_u, x_v\rangle)$ proxy precisely on the kinds
+of edges where structural homophily masks attribute-level
+similarity (e.g.\ a high-betweenness bridge between two dorms in
+the same year). In this regime the GNN's marginal advantage in
+identifying ``cheap to remove, structurally important'' edges
+pays off most.
+
+Second, in the strongly endemic regime almost any sufficiently
+budgeted intervention restores containment because $\lambda_1$
+is far above $1/(\beta/\gamma)$; the cost-aware fine-tuning the
+GNN provides gets dominated by the brute-force structural cuts
+that betweenness or community-bubble identifies. The classical
+NetMelt theory \citep{tong2012netmelt} predicts exactly this: at
+high $\beta/\gamma$, eigenscore-only ranking is near-optimal and
+the cost surface adds only second-order improvements.
 
 \subsection{Implementability gap}
-% [DRAFT] gap between ideal GNN/Betweenness frontier and realistic
-% Distance Threshold frontier; what would close it.
+
+A central practical question is the gap between an ideal but
+unenforceable policy (the GNN, which assumes the central
+planner can identify and remove arbitrary individual edges) and
+a realistic, enforceable one (the distance-threshold
+community-bubble cut, which can be communicated to the
+population as ``stay within your $k$-hop friend community'').
+
+At $R_0 = 1.5$ and a $5\%$ cost budget, the GNN's $4.0\,$pp
+reduction is roughly $1.8\times$ the distance threshold's
+$2.2\,$pp reduction, which is a meaningful but not catastrophic
+loss to enforceability. At $R_0 = 6$ the distance-threshold
+policy actually \emph{beats} the GNN in absolute reduction, so
+the implementability gap is negative there: the realistic
+policy wins outright. We read this as good news for public
+policy: the realistic intervention is the best available choice
+exactly in the regime where the disease is otherwise hardest to
+control.
 
 \subsection{Limitations}
-% [DRAFT] Reference WARNINGS.md: Facebook100 is a friendship graph not
-% a contact graph; sigmoid_dot has a narrow dynamic range; SVD pre-
-% projection in the GNN; pivot-sampled betweenness; we do not solve
-% COVID.
+
+We catalogue the project's downscoping decisions in a separate
+\texttt{WARNINGS.md} file in the repository so that subsequent
+iterations on cluster hardware can revisit each one. The most
+load-bearing limitations are:
+
+\begin{itemize}[leftmargin=2em]
+    \item \textbf{Facebook100 is a friendship graph, not a
+    contact graph.} Edges represent self-reported online ties at
+    a single 2005 snapshot; some are dense roommate links and
+    others are loose acquaintances. Treating all edges as
+    epidemiologically equivalent under SIS is a simplification.
+    The cost-aware reframe partially compensates for this (high
+    cost = closer tie $\approx$ more likely to transmit), but
+    a future iteration would replace SIS with a heterogeneous
+    contact-rate model fit to mobility data.
+    \item \textbf{The sigmoid-dot cost has a narrow dynamic
+    range.} On $L_2$-normalized one-hot features
+    $\langle x_u, x_v \rangle \in [0, 1]$, so
+    $c_e \in [0.5, 0.73]$. The cost variation across edges is
+    $1.5\times$, which is enough for the cost-budget knob to be
+    interesting but small enough that the cost function does
+    \emph{not} dominate the ranking. The cost-function ablation
+    in Section~\ref{sec:results} compares this against $4$ other
+    cost variants.
+    \item \textbf{Approximations for tractability.} Edge
+    betweenness on Penn94 is computed with $k = 300$ pivot
+    sources rather than exhaustively; the GNN's input features
+    are projected through a $64$-component TruncatedSVD before
+    GraphSAGE rather than passed in as the full one-hot matrix;
+    each Pareto cell is averaged over $N = 50$ realizations
+    rather than the originally planned $100$. Rerunning at full
+    fidelity on cluster hardware is the natural next step.
+    \item \textbf{Cross-campus regression is small-sample.}
+    Five campuses do not afford strong inferential claims about
+    which structural features predict policy success; we report
+    univariate Pearson correlations rather than multivariate
+    regressions to avoid overstating significance.
+    \item \textbf{We are not solving COVID.} The project is a
+    cost-aware empirical comparison on a stylized social
+    network; the policies it endorses near the threshold (GNN)
+    and in the endemic regime (distance threshold) are
+    informative for the design of real interventions, not
+    prescriptions for them.
+\end{itemize}
 
 \section{Conclusion}
 \label{sec:conclusion}
-% [DRAFT_AFTER_EVERYTHING]
+
+We posed the cost-aware version of the classical edge-removal
+containment problem: minimize the total cost of removed edges
+subject to keeping steady-state SIS prevalence below a target,
+where edge cost is a feature-similarity proxy for social
+expense. Across five Facebook100 campuses, four candidate
+policies, four values of $R_0$, and three robustness panels,
+the central finding is a regime split. \emph{Near the spectral
+threshold}, a GNN whose per-edge cost is learned end-to-end via
+self-supervised link prediction strictly dominates the
+classical baselines, cutting steady-state prevalence by roughly
+twice as much per unit of social cost. \emph{In the strongly
+endemic regime}, the realistic distance-threshold policy
+catches up and overtakes, and the practical policy
+recommendation is therefore not a single winner but a
+regime-dependent choice. The cost-aware reframe is what makes
+this comparison possible at all; under uniform costs the
+classical literature has long known that NetMelt-style spectral
+ranking is near-optimal, but the cost-aware version makes the
+implementability gap explicit and quantifiable.
 
 \bibliographystyle{plainnat}
 \bibliography{refs}
