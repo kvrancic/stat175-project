@@ -39,8 +39,10 @@ python scripts/08_make_figures.py
 # 10. Headline numbers JSON + per-policy AUC summary CSV (quoted by the paper + talk).
 python scripts/09_summarize_results.py
 
-# 11. Interactive demo.
-streamlit run webapp/app.py
+# 11. Interactive demo. NOTE: prefix with `uv run` so streamlit uses the
+#     project's pinned environment instead of the system Python (which on
+#     macOS often has anaconda's numpy/pandas with a mismatched ABI).
+uv run streamlit run webapp/app.py
 ```
 
 ## Repository layout
