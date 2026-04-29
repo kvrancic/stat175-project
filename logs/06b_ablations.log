@@ -1,0 +1,120 @@
+[skip] /Users/karlovrancic/Documents/projects/stat175/project/results/ablation_gnn_arch.parquet already exists; pass --force to rerun
+  Caltech36    cost=sigmoid_dot        random             R0= 3.0 done
+  Caltech36    cost=sigmoid_dot        betweenness        R0= 3.0 done
+  Caltech36    cost=sigmoid_dot        distance_threshold R0= 3.0 done
+  Caltech36    cost=sigmoid_dot        gnn                R0= 3.0 done
+  Caltech36    cost=cosine             random             R0= 3.0 done
+  Caltech36    cost=cosine             betweenness        R0= 3.0 done
+  Caltech36    cost=cosine             distance_threshold R0= 3.0 done
+  Caltech36    cost=cosine             gnn                R0= 3.0 done
+  Caltech36    cost=raw_dot            random             R0= 3.0 done
+  Caltech36    cost=raw_dot            betweenness        R0= 3.0 done
+  Caltech36    cost=raw_dot            distance_threshold R0= 3.0 done
+  Caltech36    cost=raw_dot            gnn                R0= 3.0 done
+  Caltech36    cost=uniform            random             R0= 3.0 done
+  Caltech36    cost=uniform            betweenness        R0= 3.0 done
+  Caltech36    cost=uniform            distance_threshold R0= 3.0 done
+  Caltech36    cost=uniform            gnn                R0= 3.0 done
+  Caltech36    cost=oracle_lognormal   random             R0= 3.0 done
+  Caltech36    cost=oracle_lognormal   betweenness        R0= 3.0 done
+  Caltech36    cost=oracle_lognormal   distance_threshold R0= 3.0 done
+  Caltech36    cost=oracle_lognormal   gnn                R0= 3.0 done
+  Bowdoin47    cost=sigmoid_dot        random             R0= 3.0 done
+  Bowdoin47    cost=sigmoid_dot        betweenness        R0= 3.0 done
+  Bowdoin47    cost=sigmoid_dot        distance_threshold R0= 3.0 done
+  Bowdoin47    cost=sigmoid_dot        gnn                R0= 3.0 done
+  Bowdoin47    cost=cosine             random             R0= 3.0 done
+  Bowdoin47    cost=cosine             betweenness        R0= 3.0 done
+  Bowdoin47    cost=cosine             distance_threshold R0= 3.0 done
+  Bowdoin47    cost=cosine             gnn                R0= 3.0 done
+  Bowdoin47    cost=raw_dot            random             R0= 3.0 done
+  Bowdoin47    cost=raw_dot            betweenness        R0= 3.0 done
+  Bowdoin47    cost=raw_dot            distance_threshold R0= 3.0 done
+  Bowdoin47    cost=raw_dot            gnn                R0= 3.0 done
+  Bowdoin47    cost=uniform            random             R0= 3.0 done
+  Bowdoin47    cost=uniform            betweenness        R0= 3.0 done
+  Bowdoin47    cost=uniform            distance_threshold R0= 3.0 done
+  Bowdoin47    cost=uniform            gnn                R0= 3.0 done
+  Bowdoin47    cost=oracle_lognormal   random             R0= 3.0 done
+  Bowdoin47    cost=oracle_lognormal   betweenness        R0= 3.0 done
+  Bowdoin47    cost=oracle_lognormal   distance_threshold R0= 3.0 done
+  Bowdoin47    cost=oracle_lognormal   gnn                R0= 3.0 done
+  Harvard1     cost=sigmoid_dot        random             R0= 3.0 done
+  Harvard1     cost=sigmoid_dot        betweenness        R0= 3.0 done
+  Harvard1     cost=sigmoid_dot        distance_threshold R0= 3.0 done
+  Harvard1     cost=sigmoid_dot        gnn                R0= 3.0 done
+  Harvard1     cost=cosine             random             R0= 3.0 done
+  Harvard1     cost=cosine             betweenness        R0= 3.0 done
+  Harvard1     cost=cosine             distance_threshold R0= 3.0 done
+  Harvard1     cost=cosine             gnn                R0= 3.0 done
+  Harvard1     cost=raw_dot            random             R0= 3.0 done
+  Harvard1     cost=raw_dot            betweenness        R0= 3.0 done
+  Harvard1     cost=raw_dot            distance_threshold R0= 3.0 done
+  Harvard1     cost=raw_dot            gnn                R0= 3.0 done
+  Harvard1     cost=uniform            random             R0= 3.0 done
+  Harvard1     cost=uniform            betweenness        R0= 3.0 done
+  Harvard1     cost=uniform            distance_threshold R0= 3.0 done
+  Harvard1     cost=uniform            gnn                R0= 3.0 done
+  Harvard1     cost=oracle_lognormal   random             R0= 3.0 done
+  Harvard1     cost=oracle_lognormal   betweenness        R0= 3.0 done
+  Harvard1     cost=oracle_lognormal   distance_threshold R0= 3.0 done
+  Harvard1     cost=oracle_lognormal   gnn                R0= 3.0 done
+  Penn94       cost=sigmoid_dot        random             R0= 3.0 done
+  Penn94       cost=sigmoid_dot        betweenness        R0= 3.0 done
+  Penn94       cost=sigmoid_dot        distance_threshold R0= 3.0 done
+  Penn94       cost=sigmoid_dot        gnn                R0= 3.0 done
+  Penn94       cost=cosine             random             R0= 3.0 done
+  Penn94       cost=cosine             betweenness        R0= 3.0 done
+  Penn94       cost=cosine             distance_threshold R0= 3.0 done
+  Penn94       cost=cosine             gnn                R0= 3.0 done
+  Penn94       cost=raw_dot            random             R0= 3.0 done
+  Penn94       cost=raw_dot            betweenness        R0= 3.0 done
+  Penn94       cost=raw_dot            distance_threshold R0= 3.0 done
+  Penn94       cost=raw_dot            gnn                R0= 3.0 done
+  Penn94       cost=uniform            random             R0= 3.0 done
+  Penn94       cost=uniform            betweenness        R0= 3.0 done
+  Penn94       cost=uniform            distance_threshold R0= 3.0 done
+  Penn94       cost=uniform            gnn                R0= 3.0 done
+  Penn94       cost=oracle_lognormal   random             R0= 3.0 done
+  Penn94       cost=oracle_lognormal   betweenness        R0= 3.0 done
+  Penn94       cost=oracle_lognormal   distance_threshold R0= 3.0 done
+  Penn94       cost=oracle_lognormal   gnn                R0= 3.0 done
+  Tennessee95  cost=sigmoid_dot        random             R0= 3.0 done
+  Tennessee95  cost=sigmoid_dot        betweenness        R0= 3.0 done
+  Tennessee95  cost=sigmoid_dot        distance_threshold R0= 3.0 done
+  Tennessee95  cost=sigmoid_dot        gnn                R0= 3.0 done
+  Tennessee95  cost=cosine             random             R0= 3.0 done
+  Tennessee95  cost=cosine             betweenness        R0= 3.0 done
+  Tennessee95  cost=cosine             distance_threshold R0= 3.0 done
+  Tennessee95  cost=cosine             gnn                R0= 3.0 done
+  Tennessee95  cost=raw_dot            random             R0= 3.0 done
+  Tennessee95  cost=raw_dot            betweenness        R0= 3.0 done
+  Tennessee95  cost=raw_dot            distance_threshold R0= 3.0 done
+  Tennessee95  cost=raw_dot            gnn                R0= 3.0 done
+  Tennessee95  cost=uniform            random             R0= 3.0 done
+  Tennessee95  cost=uniform            betweenness        R0= 3.0 done
+  Tennessee95  cost=uniform            distance_threshold R0= 3.0 done
+  Tennessee95  cost=uniform            gnn                R0= 3.0 done
+  Tennessee95  cost=oracle_lognormal   random             R0= 3.0 done
+  Tennessee95  cost=oracle_lognormal   betweenness        R0= 3.0 done
+  Tennessee95  cost=oracle_lognormal   distance_threshold R0= 3.0 done
+  Tennessee95  cost=oracle_lognormal   gnn                R0= 3.0 done
+
+[saved] /Users/karlovrancic/Documents/projects/stat175/project/results/ablation_cost_function.parquet  (500 rows)
+  synth-er random             R0= 3.0 done
+  synth-er betweenness        R0= 3.0 done
+  synth-er distance_threshold R0= 3.0 done
+  synth-ba random             R0= 3.0 done
+  synth-ba betweenness        R0= 3.0 done
+  synth-ba distance_threshold R0= 3.0 done
+  synth-ws random             R0= 3.0 done
+  synth-ws betweenness        R0= 3.0 done
+  synth-ws distance_threshold R0= 3.0 done
+  synth-config random             R0= 3.0 done
+  synth-config betweenness        R0= 3.0 done
+  synth-config distance_threshold R0= 3.0 done
+  synth-sbm random             R0= 3.0 done
+  synth-sbm betweenness        R0= 3.0 done
+  synth-sbm distance_threshold R0= 3.0 done
+
+[saved] /Users/karlovrancic/Documents/projects/stat175/project/results/ablation_synthetic_topology.parquet  (75 rows)

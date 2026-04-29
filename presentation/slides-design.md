@@ -89,7 +89,7 @@ The web-app screenshot for Slide 15 does **not yet exist**: take a fresh capture
 - Subtitle in Mist, Inter 400 italic, 26 pt:
   > Learning the cost of breaking a friendship.
 - Author block, 22 pt, Paper at 80% opacity, two columns:
-  > Karlo &nbsp; Alec Leprevotte
+  > Karlo Vrancic &nbsp; Alec Leprevotte
   > Jackson Webster &nbsp; Ryan Jiang
 - Footer, JetBrains Mono 16 pt, Slate: `Harvard · Prof. Austern · 28 April 2026`
 
@@ -517,9 +517,7 @@ If the live demo fails or gets skipped, this slide is on screen for under 4 seco
   > Code, paper draft, all figures: in the project repo.
   > Reproduce the headline plot: `python scripts/04_run_pareto.py && python scripts/08_make_figures.py`.
 - Authors, Mist 18 pt, single line:
-  > Karlo · Alec Leprevotte · Jackson Webster · Ryan Jiang
-- Acknowledgement, Mist 14 pt:
-  > With thanks to Prof. Austern for the cost-function framing and the Track 1 latitude.
+  > Karlo Vrancic · Alec Leprevotte · Jackson Webster · Ryan Jiang
 
 Background: the same rotating Caltech36 visualization from Slide 1, at 30% opacity.
 
