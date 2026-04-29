@@ -35,7 +35,7 @@ from stat175.policies.betweenness import EdgeBetweennessOverCost  # noqa: E402
 from stat175.policies.distance_threshold import DistanceThreshold  # noqa: E402
 from stat175.policies.gnn_policy import GNNPolicy  # noqa: E402
 from stat175.policies.random_baseline import RandomEdgeRemoval  # noqa: E402
-from stat175.sim.sis import spectral_radius  # noqa: E402
+from stat175.sim.sis import SISConfig, run_sis, spectral_radius  # noqa: E402
 
 
 CAMPUS = "Harvard1"
@@ -260,6 +260,69 @@ def render_frame(xs: np.ndarray, ys: np.ndarray, segments, sizes: np.ndarray,
     return figure
 
 
+def render_removed_edges_image(
+    xs: np.ndarray,
+    ys: np.ndarray,
+    residual_segments: np.ndarray,
+    removed_segments: np.ndarray,
+    title: str,
+) -> bytes:
+    """Static PNG: dorm-clustered nodes with removed edges drawn in gold."""
+    figure, axis = plt.subplots(figsize=(11, 11), dpi=80)
+    figure.patch.set_facecolor("#0d1117")
+    axis.set_facecolor("#0d1117")
+    axis.add_collection(
+        LineCollection(residual_segments, colors="#1f2733", linewidths=0.25, alpha=0.18)
+    )
+    if removed_segments.shape[0] > 0:
+        axis.add_collection(
+            LineCollection(
+                removed_segments, colors="#d4a017", linewidths=0.55, alpha=0.75,
+            )
+        )
+    axis.set_xlim(xs.min() - 1.0, xs.max() + 1.0)
+    axis.set_ylim(ys.min() - 1.0, ys.max() + 1.0)
+    axis.set_xticks([]); axis.set_yticks([])
+    for spine in axis.spines.values():
+        spine.set_visible(False)
+    axis.set_aspect("equal")
+    axis.scatter(xs, ys, s=42, c="#5a6472", alpha=0.85, linewidths=0)
+    axis.set_title(title, color="#f0f6fc", fontsize=14, pad=12)
+    figure.subplots_adjust(left=0.02, right=0.98, top=0.93, bottom=0.02)
+
+    buffer = io.BytesIO()
+    figure.savefig(buffer, format="png", facecolor=figure.get_facecolor())
+    plt.close(figure)
+    buffer.seek(0)
+    return buffer.getvalue()
+
+
+def render_outcomes_chart(result, no_intervention) -> plt.Figure:
+    """Matplotlib chart of per-step prevalence with mean ± std bands."""
+    figure, axis = plt.subplots(figsize=(8, 4.5), dpi=110)
+    x = np.arange(result.per_step_prevalence_mean.shape[0])
+    axis.plot(x, no_intervention.per_step_prevalence_mean, color="#888", label="no removal")
+    axis.fill_between(
+        x,
+        no_intervention.per_step_prevalence_mean - no_intervention.per_step_prevalence_std,
+        no_intervention.per_step_prevalence_mean + no_intervention.per_step_prevalence_std,
+        color="#888", alpha=0.2,
+    )
+    axis.plot(x, result.per_step_prevalence_mean, color="#d62728", label="with policy")
+    axis.fill_between(
+        x,
+        result.per_step_prevalence_mean - result.per_step_prevalence_std,
+        result.per_step_prevalence_mean + result.per_step_prevalence_std,
+        color="#d62728", alpha=0.25,
+    )
+    axis.set_xlabel("Step")
+    axis.set_ylabel("Fraction infected")
+    axis.legend(loc="best")
+    axis.grid(alpha=0.25)
+    figure.tight_layout()
+    return figure
+
+
 def build_animation_gif(
     history: np.ndarray,
     xs: np.ndarray,
@@ -442,6 +505,8 @@ if "history" not in st.session_state:
     st.session_state["history"] = None
     st.session_state["meta"] = None
     st.session_state["gif"] = None
+    st.session_state["removed_png"] = None
+    st.session_state["outcomes"] = None
 
 if run_button:
     encoder = load_encoder_cached()
@@ -492,8 +557,44 @@ if run_button:
                 transmissions_per_step=transmissions_per_step,
                 sizes=node_marker_sizes, n_steps=N_STEPS,
             )
+
+            # Always compute the full removed-edge geometry for the static tab,
+            # regardless of how the GIF builder above gates them.
+            if removed.size > 0:
+                rp = edges[removed]
+                removed_segments_full = np.stack(
+                    [np.column_stack([xs[rp[:, 0]], ys[rp[:, 0]]]),
+                     np.column_stack([xs[rp[:, 1]], ys[rp[:, 1]]])],
+                    axis=1,
+                )
+            else:
+                removed_segments_full = np.empty((0, 2, 2), dtype=np.float64)
+            removed_png = render_removed_edges_image(
+                xs=xs, ys=ys,
+                residual_segments=residual_segments,
+                removed_segments=removed_segments_full,
+                title=(
+                    f"Removed edges: {POLICY_LABELS[policy_name]} "
+                    f"(budget {budget_fraction:.1%}, {int(removed.size):,} cuts)"
+                ),
+            )
+
+        with st.spinner("Computing aggregate prevalence (50 realizations)..."):
+            sis_config = SISConfig(
+                beta=beta, gamma=float(gamma),
+                n_steps=N_STEPS, burn_in=100,
+                n_seeds=N_SEEDS, n_realizations=50, seed=SEED,
+            )
+            agg_residual = run_sis(residual, sis_config)
+            agg_no_intervention = run_sis(adjacency, sis_config)
+
         st.session_state["history"] = history
         st.session_state["gif"] = gif_bytes
+        st.session_state["removed_png"] = removed_png
+        st.session_state["outcomes"] = {
+            "with_policy": agg_residual,
+            "no_intervention": agg_no_intervention,
+        }
         st.session_state["meta"] = {
             "policy": policy_name, "R0": R0, "budget": budget_fraction,
             "n_removed": int(removed.size),
@@ -503,8 +604,10 @@ if run_button:
 
 history = st.session_state.get("history")
 meta = st.session_state.get("meta")
-
 gif_bytes = st.session_state.get("gif")
+removed_png = st.session_state.get("removed_png")
+outcomes = st.session_state.get("outcomes")
+
 if gif_bytes is None:
     figure = render_frame(
         xs, ys, segments, node_marker_sizes,
@@ -515,6 +618,31 @@ if gif_bytes is None:
 else:
     st.markdown(
         f"{POLICY_LABELS[meta['policy']]} + R0={meta['R0']:.1f} + "
-        f"budget={meta['budget']:.1%} + Recovery={meta['recovery']:.1f} + {meta['n_removed']:,} edges removed",
+        f"budget={meta['budget']:.1%} + Recovery={meta['recovery']:.2f} + "
+        f"{meta['n_removed']:,} edges removed",
     )
-    st.image(gif_bytes, use_container_width=True)
+    tab_animation, tab_removed, tab_outcomes = st.tabs(
+        ["Animated SIS", "Removed edges", "Outcomes"]
+    )
+    with tab_animation:
+        st.image(gif_bytes, use_container_width=True)
+    with tab_removed:
+        st.image(removed_png, use_container_width=True)
+    with tab_outcomes:
+        result = outcomes["with_policy"]
+        baseline = outcomes["no_intervention"]
+        figure = render_outcomes_chart(result, baseline)
+        st.pyplot(figure, clear_figure=True, use_container_width=True)
+        ci_low, ci_high = result.steady_state_ci95
+        m1, m3, m4 = st.columns(3)
+        m1.metric(
+            "Steady-state prevalence",
+            f"{result.steady_state_prevalence:.3f}",
+            f"{result.steady_state_prevalence - baseline.steady_state_prevalence:+.3f} vs no removal",
+            delta_color="inverse",
+        )
+        m3.metric("Peak prevalence", f"{result.peak_prevalence:.3f}")
+        m4.metric(
+            "No-intervention reference",
+            f"{baseline.steady_state_prevalence:.3f}",
+        )
