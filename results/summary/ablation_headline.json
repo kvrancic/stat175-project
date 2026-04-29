@@ -18,5 +18,219 @@
       "policy": "gnn_graphsage",
       "steady_state_prevalence": 0.3057822210740696
     }
+  ],
+  "cost_function": [
+    {
+      "R0": 3.0,
+      "cost_function": "cosine",
+      "policy": "betweenness",
+      "steady_state_prevalence": 0.2870163539451004
+    },
+    {
+      "R0": 3.0,
+      "cost_function": "cosine",
+      "policy": "distance_threshold",
+      "steady_state_prevalence": 0.2919111437174449
+    },
+    {
+      "R0": 3.0,
+      "cost_function": "cosine",
+      "policy": "gnn",
+      "steady_state_prevalence": 0.29005859846691157
+    },
+    {
+      "R0": 3.0,
+      "cost_function": "cosine",
+      "policy": "random",
+      "steady_state_prevalence": 0.2970678919528512
+    },
+    {
+      "R0": 3.0,
+      "cost_function": "oracle_lognormal",
+      "policy": "betweenness",
+      "steady_state_prevalence": 0.2474783917354646
+    },
+    {
+      "R0": 3.0,
+      "cost_function": "oracle_lognormal",
+      "policy": "distance_threshold",
+      "steady_state_prevalence": 0.24191358728547224
+    },
+    {
+      "R0": 3.0,
+      "cost_function": "oracle_lognormal",
+      "policy": "gnn",
+      "steady_state_prevalence": 0.2921033838270464
+    },
+    {
+      "R0": 3.0,
+      "cost_function": "oracle_lognormal",
+      "policy": "random",
+      "steady_state_prevalence": 0.29711828350229247
+    },
+    {
+      "R0": 3.0,
+      "cost_function": "raw_dot",
+      "policy": "betweenness",
+      "steady_state_prevalence": 0.26224874137543236
+    },
+    {
+      "R0": 3.0,
+      "cost_function": "raw_dot",
+      "policy": "distance_threshold",
+      "steady_state_prevalence": 0.26631395815680325
+    },
+    {
+      "R0": 3.0,
+      "cost_function": "raw_dot",
+      "policy": "gnn",
+      "steady_state_prevalence": 0.28247035893413985
+    },
+    {
+      "R0": 3.0,
+      "cost_function": "raw_dot",
+      "policy": "random",
+      "steady_state_prevalence": 0.2970188908927672
+    },
+    {
+      "R0": 3.0,
+      "cost_function": "sigmoid_dot",
+      "policy": "betweenness",
+      "steady_state_prevalence": 0.29009435401944633
+    },
+    {
+      "R0": 3.0,
+      "cost_function": "sigmoid_dot",
+      "policy": "distance_threshold",
+      "steady_state_prevalence": 0.2943148870464239
+    },
+    {
+      "R0": 3.0,
+      "cost_function": "sigmoid_dot",
+      "policy": "gnn",
+      "steady_state_prevalence": 0.2908410976610241
+    },
+    {
+      "R0": 3.0,
+      "cost_function": "sigmoid_dot",
+      "policy": "random",
+      "steady_state_prevalence": 0.2970943272458415
+    },
+    {
+      "R0": 3.0,
+      "cost_function": "uniform",
+      "policy": "betweenness",
+      "steady_state_prevalence": 0.2908781104262735
+    },
+    {
+      "R0": 3.0,
+      "cost_function": "uniform",
+      "policy": "distance_threshold",
+      "steady_state_prevalence": 0.2976056790363505
+    },
+    {
+      "R0": 3.0,
+      "cost_function": "uniform",
+      "policy": "gnn",
+      "steady_state_prevalence": 0.2920024440460037
+    },
+    {
+      "R0": 3.0,
+      "cost_function": "uniform",
+      "policy": "random",
+      "steady_state_prevalence": 0.2971065951075954
+    }
+  ],
+  "synthetic_topology": [
+    {
+      "R0": 3.0,
+      "topology": "ba",
+      "policy": "betweenness",
+      "steady_state_prevalence": 0.25469160104986877
+    },
+    {
+      "R0": 3.0,
+      "topology": "ba",
+      "policy": "distance_threshold",
+      "steady_state_prevalence": 0.29543963254593175
+    },
+    {
+      "R0": 3.0,
+      "topology": "ba",
+      "policy": "random",
+      "steady_state_prevalence": 0.4456364829396325
+    },
+    {
+      "R0": 3.0,
+      "topology": "config",
+      "policy": "betweenness",
+      "steady_state_prevalence": 0.2687007874015748
+    },
+    {
+      "R0": 3.0,
+      "topology": "config",
+      "policy": "distance_threshold",
+      "steady_state_prevalence": 0.27604986876640425
+    },
+    {
+      "R0": 3.0,
+      "topology": "config",
+      "policy": "random",
+      "steady_state_prevalence": 0.4051837270341208
+    },
+    {
+      "R0": 3.0,
+      "topology": "er",
+      "policy": "betweenness",
+      "steady_state_prevalence": 0.4190944881889764
+    },
+    {
+      "R0": 3.0,
+      "topology": "er",
+      "policy": "distance_threshold",
+      "steady_state_prevalence": 0.46617454068241465
+    },
+    {
+      "R0": 3.0,
+      "topology": "er",
+      "policy": "random",
+      "steady_state_prevalence": 0.6055446194225721
+    },
+    {
+      "R0": 3.0,
+      "topology": "sbm",
+      "policy": "betweenness",
+      "steady_state_prevalence": 0.4700787401574803
+    },
+    {
+      "R0": 3.0,
+      "topology": "sbm",
+      "policy": "distance_threshold",
+      "steady_state_prevalence": 0.5999343832020998
+    },
+    {
+      "R0": 3.0,
+      "topology": "sbm",
+      "policy": "random",
+      "steady_state_prevalence": 0.6109251968503937
+    },
+    {
+      "R0": 3.0,
+      "topology": "ws",
+      "policy": "betweenness",
+      "steady_state_prevalence": 0.4587270341207349
+    },
+    {
+      "R0": 3.0,
+      "topology": "ws",
+      "policy": "distance_threshold",
+      "steady_state_prevalence": 0.5818569553805774
+    },
+    {
+      "R0": 3.0,
+      "topology": "ws",
+      "policy": "random",
+      "steady_state_prevalence": 0.6130577427821522
+    }
   ]
 }

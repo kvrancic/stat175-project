@@ -82,5 +82,47 @@
       "policy": "random",
       "steady_state_prevalence": 0.48112127949029154
     }
+  ],
+  "adversarial_seed": [
+    {
+      "R0": 1.5,
+      "policy": "betweenness",
+      "steady_state_prevalence": 0.0667069459787559
+    },
+    {
+      "R0": 1.5,
+      "policy": "distance_threshold",
+      "steady_state_prevalence": 0.0627098812129624
+    },
+    {
+      "R0": 1.5,
+      "policy": "gnn",
+      "steady_state_prevalence": 0.022989813121765644
+    },
+    {
+      "R0": 1.5,
+      "policy": "random",
+      "steady_state_prevalence": 0.0707828397104199
+    },
+    {
+      "R0": 3.0,
+      "policy": "betweenness",
+      "steady_state_prevalence": 0.30603602455267925
+    },
+    {
+      "R0": 3.0,
+      "policy": "distance_threshold",
+      "steady_state_prevalence": 0.30903920866409157
+    },
+    {
+      "R0": 3.0,
+      "policy": "gnn",
+      "steady_state_prevalence": 0.2864371663549005
+    },
+    {
+      "R0": 3.0,
+      "policy": "random",
+      "steady_state_prevalence": 0.31189604665166615
+    }
   ]
 }

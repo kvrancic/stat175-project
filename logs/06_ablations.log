@@ -1,0 +1,104 @@
+[arch-ablation] Caltech36 graphsage: training...
+    epoch   1/40: loss=0.6994 val_AUROC=0.5788 (0.0s/epoch)
+    epoch  10/40: loss=0.6619 val_AUROC=0.6919 (0.0s/epoch)
+    epoch  20/40: loss=0.6312 val_AUROC=0.7267 (0.0s/epoch)
+    epoch  30/40: loss=0.6068 val_AUROC=0.7551 (0.0s/epoch)
+    epoch  40/40: loss=0.5941 val_AUROC=0.7892 (0.0s/epoch)
+  trained in 1.3s; val AUROC=0.7892
+[arch-ablation] Caltech36 gat: training...
+    epoch   1/40: loss=0.6925 val_AUROC=0.6617 (0.0s/epoch)
+    epoch  10/40: loss=0.6762 val_AUROC=0.6852 (0.0s/epoch)
+    epoch  20/40: loss=0.6473 val_AUROC=0.6843 (0.0s/epoch)
+    epoch  30/40: loss=0.6317 val_AUROC=0.7111 (0.0s/epoch)
+    epoch  40/40: loss=0.6224 val_AUROC=0.7328 (0.0s/epoch)
+  trained in 0.8s; val AUROC=0.7328
+[arch-ablation] Caltech36 gcn: training...
+    epoch   1/40: loss=0.6874 val_AUROC=0.8156 (0.0s/epoch)
+    epoch  10/40: loss=0.6527 val_AUROC=0.7946 (0.0s/epoch)
+    epoch  20/40: loss=0.6187 val_AUROC=0.7743 (0.0s/epoch)
+    epoch  30/40: loss=0.6087 val_AUROC=0.7645 (0.0s/epoch)
+    epoch  40/40: loss=0.5969 val_AUROC=0.8015 (0.0s/epoch)
+  trained in 0.5s; val AUROC=0.8015
+[arch-ablation] Bowdoin47 graphsage: training...
+    epoch   1/40: loss=0.6985 val_AUROC=0.6082 (0.1s/epoch)
+    epoch  10/40: loss=0.6451 val_AUROC=0.7382 (0.1s/epoch)
+    epoch  20/40: loss=0.5927 val_AUROC=0.7846 (0.0s/epoch)
+    epoch  30/40: loss=0.5827 val_AUROC=0.8097 (0.1s/epoch)
+    epoch  40/40: loss=0.5765 val_AUROC=0.8117 (0.0s/epoch)
+  trained in 1.7s; val AUROC=0.8117
+[arch-ablation] Bowdoin47 gat: training...
+    epoch   1/40: loss=0.6929 val_AUROC=0.7528 (0.1s/epoch)
+    epoch  10/40: loss=0.6680 val_AUROC=0.7820 (0.1s/epoch)
+    epoch  20/40: loss=0.5990 val_AUROC=0.7815 (0.1s/epoch)
+    epoch  30/40: loss=0.5889 val_AUROC=0.7876 (0.1s/epoch)
+    epoch  40/40: loss=0.5865 val_AUROC=0.7920 (0.1s/epoch)
+  trained in 2.3s; val AUROC=0.7920
+[arch-ablation] Bowdoin47 gcn: training...
+    epoch   1/40: loss=0.6893 val_AUROC=0.7799 (0.1s/epoch)
+    epoch  10/40: loss=0.6524 val_AUROC=0.8304 (0.1s/epoch)
+    epoch  20/40: loss=0.5805 val_AUROC=0.8474 (0.1s/epoch)
+    epoch  30/40: loss=0.5595 val_AUROC=0.8408 (0.1s/epoch)
+    epoch  40/40: loss=0.5549 val_AUROC=0.8470 (0.1s/epoch)
+  trained in 2.7s; val AUROC=0.8470
+[arch-ablation] Harvard1 graphsage: training...
+    epoch   1/40: loss=0.6968 val_AUROC=0.7239 (0.7s/epoch)
+    epoch  10/40: loss=0.6082 val_AUROC=0.7764 (0.5s/epoch)
+    epoch  20/40: loss=0.5591 val_AUROC=0.8423 (0.4s/epoch)
+    epoch  30/40: loss=0.5521 val_AUROC=0.8548 (0.4s/epoch)
+    epoch  40/40: loss=0.5474 val_AUROC=0.8609 (0.4s/epoch)
+  trained in 13.8s; val AUROC=0.8609
+[arch-ablation] Harvard1 gat: training...
+    epoch   1/40: loss=0.6926 val_AUROC=0.7860 (1.2s/epoch)
+    epoch  10/40: loss=0.6487 val_AUROC=0.8093 (0.7s/epoch)
+    epoch  20/40: loss=0.5857 val_AUROC=0.8114 (0.6s/epoch)
+    epoch  30/40: loss=0.5640 val_AUROC=0.8521 (0.9s/epoch)
+    epoch  40/40: loss=0.5542 val_AUROC=0.8516 (0.7s/epoch)
+  trained in 23.1s; val AUROC=0.8516
+[arch-ablation] Harvard1 gcn: training...
+    epoch   1/40: loss=0.6880 val_AUROC=0.8516 (0.7s/epoch)
+    epoch  10/40: loss=0.6235 val_AUROC=0.8710 (0.6s/epoch)
+    epoch  20/40: loss=0.5542 val_AUROC=0.8735 (0.5s/epoch)
+    epoch  30/40: loss=0.5284 val_AUROC=0.8936 (0.5s/epoch)
+    epoch  40/40: loss=0.5204 val_AUROC=0.8997 (0.5s/epoch)
+  trained in 15.9s; val AUROC=0.8997
+[arch-ablation] Penn94 graphsage: training...
+    epoch   1/40: loss=0.6985 val_AUROC=0.5971 (0.9s/epoch)
+    epoch  10/40: loss=0.6705 val_AUROC=0.7524 (0.8s/epoch)
+    epoch  20/40: loss=0.6121 val_AUROC=0.7642 (0.6s/epoch)
+    epoch  30/40: loss=0.5988 val_AUROC=0.7791 (1.6s/epoch)
+    epoch  40/40: loss=0.5910 val_AUROC=0.7916 (0.8s/epoch)
+  trained in 21.5s; val AUROC=0.7916
+[arch-ablation] Penn94 gat: training...
+    epoch   1/40: loss=0.6928 val_AUROC=0.6474 (1.6s/epoch)
+    epoch  10/40: loss=0.6769 val_AUROC=0.6929 (1.0s/epoch)
+    epoch  20/40: loss=0.6297 val_AUROC=0.7362 (1.2s/epoch)
+    epoch  30/40: loss=0.6016 val_AUROC=0.7710 (1.1s/epoch)
+    epoch  40/40: loss=0.5968 val_AUROC=0.7795 (1.1s/epoch)
+  trained in 34.1s; val AUROC=0.7795
+[arch-ablation] Penn94 gcn: training...
+    epoch   1/40: loss=0.6859 val_AUROC=0.8277 (0.7s/epoch)
+    epoch  10/40: loss=0.6474 val_AUROC=0.8350 (0.6s/epoch)
+    epoch  20/40: loss=0.5980 val_AUROC=0.8614 (0.7s/epoch)
+    epoch  30/40: loss=0.5646 val_AUROC=0.8530 (0.7s/epoch)
+    epoch  40/40: loss=0.5504 val_AUROC=0.8604 (0.8s/epoch)
+  trained in 20.2s; val AUROC=0.8604
+[arch-ablation] Tennessee95 graphsage: training...
+    epoch   1/40: loss=0.6983 val_AUROC=0.6227 (0.5s/epoch)
+    epoch  10/40: loss=0.6695 val_AUROC=0.7189 (0.4s/epoch)
+    epoch  20/40: loss=0.6123 val_AUROC=0.7601 (0.3s/epoch)
+    epoch  30/40: loss=0.6014 val_AUROC=0.7756 (0.3s/epoch)
+    epoch  40/40: loss=0.5951 val_AUROC=0.7824 (0.3s/epoch)
+  trained in 10.7s; val AUROC=0.7824
+[arch-ablation] Tennessee95 gat: training...
+    epoch   1/40: loss=0.6930 val_AUROC=0.6461 (0.7s/epoch)
+    epoch  10/40: loss=0.6827 val_AUROC=0.7068 (0.5s/epoch)
+    epoch  20/40: loss=0.6323 val_AUROC=0.7371 (0.5s/epoch)
+    epoch  30/40: loss=0.6118 val_AUROC=0.7637 (0.5s/epoch)
+    epoch  40/40: loss=0.6056 val_AUROC=0.7688 (0.5s/epoch)
+  trained in 16.4s; val AUROC=0.7688
+[arch-ablation] Tennessee95 gcn: training...
+    epoch   1/40: loss=0.6874 val_AUROC=0.8223 (0.4s/epoch)
+    epoch  10/40: loss=0.6463 val_AUROC=0.8224 (0.3s/epoch)
+    epoch  20/40: loss=0.6086 val_AUROC=0.8153 (0.3s/epoch)
+    epoch  30/40: loss=0.5903 val_AUROC=0.7995 (0.4s/epoch)
+    epoch  40/40: loss=0.5818 val_AUROC=0.8228 (0.4s/epoch)
