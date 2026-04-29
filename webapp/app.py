@@ -1,25 +1,24 @@
-"""Streamlit demo: explore SIS containment policies on Facebook100 campuses.
+"""Streamlit demo: SIS containment on Harvard1, visualized as a dorm-clustered graph.
 
 Usage:
-    streamlit run webapp/app.py
+    uv run streamlit run webapp/app.py
 
-The app reads cached campus artifacts from data/processed/, the trained
-GNN encoders from data/processed/gnn_encoders/, and runs simulations
-on demand. All controls are in the left sidebar; the main pane shows
-the residual graph (selected edges greyed out), the per-step
-prevalence trajectory, and the cached Pareto frontier for the chosen
-campus / R0.
+The full screen is the campus contact graph: nodes are students, spatially
+grouped by dorm. When the simulation runs, infected nodes light up red
+step-by-step (drag the slider, or click Play).
 """
 
 from __future__ import annotations
 
+import io
 import sys
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 import streamlit as st
+from matplotlib.collections import LineCollection
+from PIL import Image
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT / "src"))
@@ -27,42 +26,146 @@ sys.path.insert(0, str(REPO_ROOT))
 
 from scripts._cache_loader import load_cache  # noqa: E402
 
-from stat175.costs.edge_costs import compute_costs  # noqa: E402
+import scipy.sparse as sp  # noqa: E402
+from scipy.sparse.csgraph import connected_components  # noqa: E402
+
+from stat175.costs.edge_costs import compute_costs, edges_from_adjacency  # noqa: E402
 from stat175.policies.base import PolicyInput, apply_removal  # noqa: E402
 from stat175.policies.betweenness import EdgeBetweennessOverCost  # noqa: E402
 from stat175.policies.distance_threshold import DistanceThreshold  # noqa: E402
 from stat175.policies.gnn_policy import GNNPolicy  # noqa: E402
 from stat175.policies.random_baseline import RandomEdgeRemoval  # noqa: E402
 from stat175.sim.sis import SISConfig, run_sis, spectral_radius  # noqa: E402
-from stat175.viz.plots import POLICY_COLORS, POLICY_DISPLAY_NAMES, pareto_frontier  # noqa: E402
 
 
-CAMPUS_OPTIONS = ["Caltech36", "Bowdoin47", "Harvard1", "Penn94", "Tennessee95"]
-COST_OPTIONS = ["sigmoid_dot", "cosine", "uniform"]
+CAMPUS = "Harvard1"
+DORM_COLUMN = 4  # facebook100 attribute column for dorm/house
+
+# 12 largest dorm codes for Harvard1 (the 12 undergrad houses + freshman yard
+# cluster). Codes 0 and 12+ are mostly missing-data or tiny non-undergrad
+# affiliations and would only clutter the visualization.
+UNDERGRAD_DORM_CODES = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 27)
+
+# Randomly sample roughly this many students from the undergrad-house subgraph
+# so the canvas stays readable. The induced subgraph is sparser and shows the
+# dorm clusters clearly.
+TARGET_NODES = 1200
+
+# Hardcoded simulation defaults (match configs/default.yaml main experiment).
+N_STEPS = 200
+N_SEEDS = 10
+SEED = 42
+
 POLICY_OPTIONS = ["random", "betweenness", "distance_threshold", "gnn"]
+POLICY_LABELS = {
+    "random": "Random",
+    "betweenness": "Edge betweenness / cost",
+    "distance_threshold": "Distance threshold (community bubbles)",
+    "gnn": "GNN (learned)",
+}
+
+
+def _take_giant_component(adj, features, attrs):
+    n_components, component_labels = connected_components(adj, directed=False)
+    if n_components <= 1:
+        return adj, features, attrs
+    component_sizes = np.bincount(component_labels)
+    giant = np.where(component_labels == int(np.argmax(component_sizes)))[0]
+    return adj[giant][:, giant].tocsr(), features[giant], attrs[giant]
+
+
+@st.cache_resource(show_spinner="Loading Harvard undergrad contact graph...")
+def load_harvard():
+    """Restrict Harvard1 to undergrad dorms, randomly subsample students, take giant component."""
+    cache = load_cache(CAMPUS)
+    full_adjacency = cache["adjacency"]
+    attributes = cache["attributes"]
+    full_features = cache["features"]
+
+    dorms = attributes[:, DORM_COLUMN].astype(np.int64)
+    keep = np.isin(dorms, np.array(UNDERGRAD_DORM_CODES, dtype=np.int64))
+    keep_indices = np.where(keep)[0]
+
+    sub_adj = full_adjacency[keep_indices][:, keep_indices].tocsr()
+    sub_attrs = attributes[keep_indices]
+    sub_features = full_features[keep_indices]
+
+    sub_adj, sub_features, sub_attrs = _take_giant_component(sub_adj, sub_features, sub_attrs)
+
+    if sub_adj.shape[0] > TARGET_NODES:
+        rng = np.random.default_rng(SEED)
+        chosen = np.sort(rng.choice(sub_adj.shape[0], size=TARGET_NODES, replace=False))
+        sub_adj = sub_adj[chosen][:, chosen].tocsr()
+        sub_attrs = sub_attrs[chosen]
+        sub_features = sub_features[chosen]
+        sub_adj, sub_features, sub_attrs = _take_giant_component(sub_adj, sub_features, sub_attrs)
+
+    edges = edges_from_adjacency(sub_adj)
+    costs = compute_costs("sigmoid_dot", sub_features, edges)
+
+    return {
+        "adjacency": sub_adj,
+        "attributes": sub_attrs,
+        "features": sub_features,
+        "edges": edges,
+        "sigmoid_dot_costs": costs,
+        "lambda_1": spectral_radius(sub_adj),
+    }
 
 
 @st.cache_resource(show_spinner=False)
-def load_campus_artifacts(name: str):
-    return load_cache(name)
-
-
-@st.cache_resource(show_spinner=False)
-def load_encoder_cached(name: str):
+def load_encoder_cached():
     try:
         from scripts.train_gnn_helpers import load_encoder
 
-        return load_encoder(name)
+        return load_encoder(CAMPUS)
     except FileNotFoundError:
         return None
 
 
-@st.cache_data(show_spinner=False)
-def precomputed_pareto_path() -> Path | None:
-    path = REPO_ROOT / "results" / "main_pareto.parquet"
-    if not path.exists():
-        return None
-    return path
+@st.cache_resource(show_spinner="Computing dorm-clustered layout...")
+def dorm_layout(attributes_bytes: bytes, n: int):
+    # The bytes arg is just a cache key; recover the array from the loaded cache.
+    cache = load_harvard()
+    dorms = cache["attributes"][:, DORM_COLUMN].astype(np.int64)
+    unique_dorms = np.array(sorted({int(d) for d in dorms}))
+    counts = {int(d): int((dorms == d).sum()) for d in unique_dorms}
+    ordered = sorted(unique_dorms, key=lambda d: -counts[int(d)])
+
+    big_radius = 16.0
+    centers: dict[int, tuple[float, float]] = {}
+    for i, d in enumerate(ordered):
+        theta = 2.0 * np.pi * i / max(1, len(ordered))
+        centers[int(d)] = (big_radius * np.cos(theta), big_radius * np.sin(theta))
+
+    rng = np.random.default_rng(0)
+    xs = np.zeros(n, dtype=np.float64)
+    ys = np.zeros(n, dtype=np.float64)
+    for d in ordered:
+        idxs = np.where(dorms == int(d))[0]
+        if idxs.size == 0:
+            continue
+        cx, cy = centers[int(d)]
+        cluster_radius = 0.4 + 0.13 * np.sqrt(idxs.size)
+        angle = rng.uniform(0.0, 2.0 * np.pi, size=idxs.size)
+        radial = cluster_radius * np.sqrt(rng.uniform(0.0, 1.0, size=idxs.size))
+        xs[idxs] = cx + radial * np.cos(angle)
+        ys[idxs] = cy + radial * np.sin(angle)
+    return xs, ys
+
+
+@st.cache_resource(show_spinner=False)
+def edge_segments():
+    """All inter-supernode edges as 2-D line segments for matplotlib."""
+    cache = load_harvard()
+    edges = cache["edges"]
+    xs, ys = dorm_layout(b"_", int(cache["adjacency"].shape[0]))
+    segs = np.stack(
+        [np.column_stack([xs[edges[:, 0]], ys[edges[:, 0]]]),
+         np.column_stack([xs[edges[:, 1]], ys[edges[:, 1]]])],
+        axis=1,
+    )
+    return segs
 
 
 def build_policy(name: str, encoder, features) -> object:
@@ -75,61 +178,340 @@ def build_policy(name: str, encoder, features) -> object:
     if name == "gnn":
         if encoder is None:
             raise RuntimeError(
-                "No trained GNN encoder available for this campus. Run scripts/03_train_gnn.py."
+                "No trained GNN encoder for Harvard1. Run scripts/03_train_gnn.py."
             )
         return GNNPolicy(encoder, features, device="cpu")
     raise ValueError(f"unknown policy {name}")
 
 
-st.set_page_config(page_title="STAT 175 — SIS containment", layout="wide")
+def simulate_history(adjacency, residual_edges, beta: float, gamma: float,
+                     n_steps: int, n_seeds: int, seed: int):
+    """Run a single SIS realization, returning the infected history and per-step transmission edges.
 
-st.title("Cost-constrained edge removal for SIS epidemic containment")
-st.caption(
-    "Pick a campus, an epidemic regime, and a containment policy. Watch how the "
-    "selected edges and the policy's bang-for-buck score reshape the steady-state "
-    "infection rate. (STAT 175 final project; data: Facebook100.)"
+    Returns
+    -------
+    history : ndarray of shape (n_steps + 1, n) with the infected boolean state at each step.
+    transmissions_per_step : list of length n_steps + 1 where each element is an int64 array
+        of indices into ``residual_edges`` for edges (u, v) such that one endpoint went S->I
+        in this step and the other endpoint was I at the previous step. Step 0 is empty.
+    """
+    n = int(adjacency.shape[0])
+    rng = np.random.default_rng(seed)
+    log_one_minus_beta = np.log1p(-beta) if beta > 0 else 0.0
+    adjacency_float = adjacency.astype(np.float32)
+    u_idx = residual_edges[:, 0]
+    v_idx = residual_edges[:, 1]
+
+    seeds = rng.choice(n, size=min(n_seeds, n), replace=False)
+    infected = np.zeros(n, dtype=bool)
+    infected[seeds] = True
+
+    history = np.zeros((n_steps + 1, n), dtype=bool)
+    history[0] = infected
+    transmissions_per_step: list[np.ndarray] = [np.empty(0, dtype=np.int64)]
+    for step in range(1, n_steps + 1):
+        previous = infected
+        susceptible = ~previous
+        infected_count = adjacency_float @ previous.astype(np.float32)
+        if log_one_minus_beta == 0.0:
+            infect_probability = np.zeros_like(infected_count, dtype=np.float64)
+        else:
+            infect_probability = 1.0 - np.exp(log_one_minus_beta * infected_count)
+        new_infections = susceptible & (rng.random(n) < infect_probability)
+        recoveries = previous & (rng.random(n) < gamma)
+        infected = (previous & ~recoveries) | new_infections
+        history[step] = infected
+
+        transmission_mask = (
+            (new_infections[u_idx] & previous[v_idx])
+            | (new_infections[v_idx] & previous[u_idx])
+        )
+        transmissions_per_step.append(np.where(transmission_mask)[0].astype(np.int64))
+    return history, transmissions_per_step
+
+
+def render_frame(xs: np.ndarray, ys: np.ndarray, segments, sizes: np.ndarray,
+                 infected_mask: np.ndarray, step_index: int, n_steps: int) -> plt.Figure:
+    figure, axis = plt.subplots(figsize=(11, 11), dpi=90)
+    figure.patch.set_facecolor("#0d1117")
+    axis.set_facecolor("#0d1117")
+    if segments is not None:
+        line_collection = LineCollection(segments, colors="#1f2733", linewidths=0.25, alpha=0.18)
+        axis.add_collection(line_collection)
+    susceptible_mask = ~infected_mask
+    axis.scatter(
+        xs[susceptible_mask], ys[susceptible_mask],
+        s=sizes[susceptible_mask] * 1.5, c="#5a6472", alpha=0.85, linewidths=0,
+    )
+    axis.scatter(
+        xs[infected_mask], ys[infected_mask],
+        s=sizes[infected_mask] * 2.4, c="#ff3b3b", alpha=0.95, linewidths=0,
+    )
+    axis.set_xticks([]); axis.set_yticks([])
+    for spine in axis.spines.values():
+        spine.set_visible(False)
+    axis.set_aspect("equal")
+    prevalence = float(infected_mask.mean())
+    axis.set_title(
+        f"Harvard1   step {step_index}/{n_steps}    prevalence {prevalence:.1%}",
+        color="#f0f6fc", fontsize=14, pad=12,
+    )
+    figure.tight_layout()
+    return figure
+
+
+def render_removed_edges_image(
+    xs: np.ndarray,
+    ys: np.ndarray,
+    residual_segments: np.ndarray,
+    removed_segments: np.ndarray,
+    title: str,
+) -> bytes:
+    """Static PNG: dorm-clustered nodes with removed edges drawn in gold."""
+    figure, axis = plt.subplots(figsize=(11, 11), dpi=80)
+    figure.patch.set_facecolor("#0d1117")
+    axis.set_facecolor("#0d1117")
+    axis.add_collection(
+        LineCollection(residual_segments, colors="#1f2733", linewidths=0.25, alpha=0.18)
+    )
+    if removed_segments.shape[0] > 0:
+        axis.add_collection(
+            LineCollection(
+                removed_segments, colors="#d4a017", linewidths=0.55, alpha=0.75,
+            )
+        )
+    axis.set_xlim(xs.min() - 1.0, xs.max() + 1.0)
+    axis.set_ylim(ys.min() - 1.0, ys.max() + 1.0)
+    axis.set_xticks([]); axis.set_yticks([])
+    for spine in axis.spines.values():
+        spine.set_visible(False)
+    axis.set_aspect("equal")
+    axis.scatter(xs, ys, s=42, c="#5a6472", alpha=0.85, linewidths=0)
+    axis.set_title(title, color="#f0f6fc", fontsize=14, pad=12)
+    figure.subplots_adjust(left=0.02, right=0.98, top=0.93, bottom=0.02)
+
+    buffer = io.BytesIO()
+    figure.savefig(buffer, format="png", facecolor=figure.get_facecolor())
+    plt.close(figure)
+    buffer.seek(0)
+    return buffer.getvalue()
+
+
+def render_outcomes_chart(result, no_intervention) -> plt.Figure:
+    """Matplotlib chart of per-step prevalence with mean ± std bands."""
+    figure, axis = plt.subplots(figsize=(8, 4.5), dpi=110)
+    x = np.arange(result.per_step_prevalence_mean.shape[0])
+    axis.plot(x, no_intervention.per_step_prevalence_mean, color="#888", label="no removal")
+    axis.fill_between(
+        x,
+        no_intervention.per_step_prevalence_mean - no_intervention.per_step_prevalence_std,
+        no_intervention.per_step_prevalence_mean + no_intervention.per_step_prevalence_std,
+        color="#888", alpha=0.2,
+    )
+    axis.plot(x, result.per_step_prevalence_mean, color="#d62728", label="with policy")
+    axis.fill_between(
+        x,
+        result.per_step_prevalence_mean - result.per_step_prevalence_std,
+        result.per_step_prevalence_mean + result.per_step_prevalence_std,
+        color="#d62728", alpha=0.25,
+    )
+    axis.set_xlabel("Step")
+    axis.set_ylabel("Fraction infected")
+    axis.legend(loc="best")
+    axis.grid(alpha=0.25)
+    figure.tight_layout()
+    return figure
+
+
+def build_animation_gif(
+    history: np.ndarray,
+    xs: np.ndarray,
+    ys: np.ndarray,
+    residual_segments: np.ndarray,
+    removed_segments: np.ndarray,
+    transmissions_per_step: list,
+    sizes: np.ndarray,
+    n_steps: int,
+    frame_step: int = 2,
+    fps: int = 12,
+) -> bytes:
+    """Render the SIS trajectory into an in-memory looping GIF.
+
+    Edges in the residual graph are drawn faintly behind the nodes. On any step
+    where a susceptible node was infected by an infectious neighbor, the edge
+    between them is overlaid in red for that frame, so the GIF surfaces the
+    contact pathways the epidemic actually used.
+    """
+    figure, axis = plt.subplots(figsize=(11, 11), dpi=80)
+    figure.patch.set_facecolor("#0d1117")
+    axis.set_facecolor("#0d1117")
+    axis.add_collection(
+        LineCollection(residual_segments, colors="#1f2733", linewidths=0.25, alpha=0.18)
+    )
+    if removed_segments.shape[0] > 0:
+        axis.add_collection(
+            LineCollection(
+                removed_segments, colors="#d4a017", linewidths=0.45, alpha=0.55,
+            )
+        )
+    transmission_collection = LineCollection(
+        np.empty((0, 2, 2)), colors="#4a1f1f", linewidths=0.8, alpha=0.4,
+    )
+    axis.add_collection(transmission_collection)
+    axis.set_xlim(xs.min() - 1.0, xs.max() + 1.0)
+    axis.set_ylim(ys.min() - 1.0, ys.max() + 1.0)
+    axis.set_xticks([]); axis.set_yticks([])
+    for spine in axis.spines.values():
+        spine.set_visible(False)
+    axis.set_aspect("equal")
+    susceptible_scatter = axis.scatter(
+        [], [], s=42, c="#5a6472", alpha=0.85, linewidths=0,
+    )
+    infected_scatter = axis.scatter(
+        [], [], s=60, c="#ff3b3b", alpha=0.95, linewidths=0,
+    )
+    title_artist = axis.set_title(
+        f"Harvard1   step 0/{n_steps}    prevalence 0.0%",
+        color="#f0f6fc", fontsize=14, pad=12,
+    )
+    figure.subplots_adjust(left=0.02, right=0.98, top=0.93, bottom=0.02)
+
+    frames: list[Image.Image] = []
+    for step in range(0, n_steps + 1, frame_step):
+        mask = history[step]
+        susceptible_scatter.set_offsets(np.column_stack([xs[~mask], ys[~mask]]))
+        infected_scatter.set_offsets(np.column_stack([xs[mask], ys[mask]]))
+
+        # Show transmission edges from the [step - frame_step + 1, step] window
+        # so no transmission gets skipped when we subsample frames.
+        window_start = max(0, step - frame_step + 1)
+        active_indices = np.concatenate(
+            [transmissions_per_step[i] for i in range(window_start, step + 1)]
+        ) if step > 0 else np.empty(0, dtype=np.int64)
+        if active_indices.size > 0:
+            transmission_collection.set_segments(residual_segments[active_indices])
+        else:
+            transmission_collection.set_segments(np.empty((0, 2, 2)))
+
+        title_artist.set_text(
+            f"Harvard1   step {step}/{n_steps}    prevalence {float(mask.mean()):.1%}",
+        )
+        buffer = io.BytesIO()
+        figure.savefig(buffer, format="png", facecolor=figure.get_facecolor())
+        buffer.seek(0)
+        frames.append(Image.open(buffer).convert("P", palette=Image.Palette.ADAPTIVE))
+    plt.close(figure)
+
+    gif_buffer = io.BytesIO()
+    frames[0].save(
+        gif_buffer,
+        format="GIF",
+        save_all=True,
+        append_images=frames[1:],
+        duration=int(1000 / fps),
+        loop=0,
+        optimize=False,
+        disposal=2,
+    )
+    return gif_buffer.getvalue()
+
+
+# ---------------------------------------------------------------------------
+
+st.set_page_config(page_title="Harvard1 SIS containment", layout="wide")
+
+st.markdown(
+    """
+    <style>
+    .block-container { padding-top: 3rem; padding-bottom: 0rem; max-width: 100%; }
+    </style>
+    """,
+    unsafe_allow_html=True,
 )
 
-with st.sidebar:
-    st.header("Setup")
-    campus_name = st.selectbox("Campus", CAMPUS_OPTIONS, index=0)
-    R0 = st.slider("Reproduction number R0 (= beta * lambda(A) / gamma)", 0.5, 8.0, 3.0, 0.1)
-    gamma = st.slider("Recovery rate gamma", 0.01, 0.5, 0.10, 0.01)
-    cost_name = st.selectbox("Cost function", COST_OPTIONS, index=0)
-    policy_name = st.selectbox("Policy", POLICY_OPTIONS, index=2)
-    budget_fraction = st.slider("Cost budget (fraction of total cost)", 0.0, 0.5, 0.05, 0.005)
-    n_realizations = st.slider("Number of stochastic realizations", 5, 50, 20, 5)
-    n_steps = st.slider("Simulation steps", 50, 400, 200, 25)
-    seed = st.number_input("Random seed", min_value=0, max_value=2**31 - 1, value=42, step=1)
-    run_button = st.button("Run simulation", type="primary")
-
-with st.spinner("Loading campus artifacts..."):
-    cache = load_campus_artifacts(campus_name)
-    adjacency = cache["adjacency"]
-    edges = cache["edges"]
-    features = cache["features"]
-    if cost_name == "sigmoid_dot":
-        costs = cache["sigmoid_dot_costs"]
-    else:
-        costs = compute_costs(cost_name, features, edges)
-    encoder = load_encoder_cached(campus_name)
-
+cache = load_harvard()
+adjacency = cache["adjacency"]
+edges = cache["edges"]
+features = cache["features"]
+costs = cache["sigmoid_dot_costs"]
+lambda_1 = cache["lambda_1"]
 n_nodes = int(adjacency.shape[0])
-n_edges = int(edges.shape[0])
-lam = spectral_radius(adjacency)
-beta = R0 * gamma / lam
 
-c1, c2, c3, c4 = st.columns(4)
-c1.metric("Nodes", f"{n_nodes:,}")
-c2.metric("Edges", f"{n_edges:,}")
-c3.metric("lambda_1(A)", f"{lam:.2f}")
-c4.metric("tau_c = 1/lambda", f"{1.0 / lam:.4f}")
+xs, ys = dorm_layout(b"_", n_nodes)
+segments = edge_segments()
+node_marker_sizes = np.full(n_nodes, 14.0)
+
+KNOB_KEYS = ("R0", "gamma", "policy", "budget")
+KNOB_LABELS = {"R0": "R₀", "gamma": "γ (recovery)", "policy": "Policy", "budget": "Budget"}
+KNOB_DEFAULTS = {"R0": 3.0, "gamma": 0.10, "policy": "distance_threshold", "budget": 0.05}
+for knob_key, default_value in KNOB_DEFAULTS.items():
+    st.session_state.setdefault(f"knob_{knob_key}", default_value)
+st.session_state.setdefault("active_knob", "R0")
+
+with st.sidebar:
+    st.header("Harvard: SIS containment")
+    st.caption(
+        f"{n_nodes:,} students randomly sampled from the 12 undergrad-house subgraph, with "
+        f"{edges.shape[0]:,} contacts visible, grouped by dorm."
+    )
+
+    run_button = st.button("Run simulation", type="primary", use_container_width=True)
+
+    # 2x2 grid of knob buttons. Click one to reveal its control underneath.
+    grid_rows = (KNOB_KEYS[0:2], KNOB_KEYS[2:4])
+    for row in grid_rows:
+        columns = st.columns(2)
+        for column, knob in zip(columns, row):
+            is_active = st.session_state["active_knob"] == knob
+            if column.button(
+                ("● " if is_active else "") + KNOB_LABELS[knob],
+                use_container_width=True,
+                key=f"btn_{knob}",
+                type="primary" if is_active else "secondary",
+            ):
+                st.session_state["active_knob"] = knob
+                st.rerun()
+
+    active = st.session_state["active_knob"]
+    if active == "R0":
+        st.slider(
+            "Reproduction number R0", 0.5, 8.0,
+            float(st.session_state["knob_R0"]), 0.1, key="knob_R0",
+        )
+    elif active == "gamma":
+        st.slider(
+            "Recovery rate gamma", 0.01, 0.5,
+            float(st.session_state["knob_gamma"]), 0.01, key="knob_gamma",
+        )
+    elif active == "policy":
+        st.selectbox(
+            "Containment policy", POLICY_OPTIONS,
+            index=POLICY_OPTIONS.index(st.session_state["knob_policy"]),
+            format_func=lambda k: POLICY_LABELS[k], key="knob_policy",
+        )
+    elif active == "budget":
+        st.slider(
+            "Cost budget (fraction of total)", 0.0, 0.5,
+            float(st.session_state["knob_budget"]), 0.005, key="knob_budget",
+        )
+
+R0 = float(st.session_state["knob_R0"])
+gamma = float(st.session_state["knob_gamma"])
+policy_name = st.session_state["knob_policy"]
+budget_fraction = float(st.session_state["knob_budget"])
+beta = R0 * gamma / lambda_1
+
+if "history" not in st.session_state:
+    st.session_state["history"] = None
+    st.session_state["meta"] = None
+    st.session_state["gif"] = None
+    st.session_state["removed_png"] = None
+    st.session_state["outcomes"] = None
 
 if run_button:
+    encoder = load_encoder_cached()
     if policy_name == "gnn" and encoder is None:
-        st.error(
-            "No trained GNN encoder for this campus. Run `python scripts/03_train_gnn.py` first."
-        )
+        st.error("No trained GNN encoder for Harvard1. Run `python scripts/03_train_gnn.py` first.")
     else:
         with st.spinner("Selecting edges to remove..."):
             policy = build_policy(policy_name, encoder, features)
@@ -138,7 +520,7 @@ if run_button:
                 edges=edges,
                 costs=costs,
                 budget=budget_fraction * float(costs.sum()),
-                seed=int(seed),
+                seed=SEED,
             )
             removed = (
                 policy.select(inputs)
@@ -146,77 +528,121 @@ if run_button:
                 else np.empty(0, dtype=np.int64)
             )
             residual = apply_removal(adjacency, edges, removed)
-        st.success(f"Removed {removed.size:,} edges (cost used = {float(costs[removed].sum()):.1f}).")
-
         with st.spinner("Running SIS simulation..."):
+            residual_edges = edges_from_adjacency(residual)
+            history, transmissions_per_step = simulate_history(
+                residual, residual_edges,
+                beta=beta, gamma=float(gamma),
+                n_steps=N_STEPS, n_seeds=N_SEEDS, seed=SEED,
+            )
+            residual_segments = np.stack(
+                [np.column_stack([xs[residual_edges[:, 0]], ys[residual_edges[:, 0]]]),
+                 np.column_stack([xs[residual_edges[:, 1]], ys[residual_edges[:, 1]]])],
+                axis=1,
+            )
+            if removed.size > 100000: # todo
+                removed_pairs = edges[removed]
+                removed_segments = np.stack(
+                    [np.column_stack([xs[removed_pairs[:, 0]], ys[removed_pairs[:, 0]]]),
+                     np.column_stack([xs[removed_pairs[:, 1]], ys[removed_pairs[:, 1]]])],
+                    axis=1,
+                )
+            else:
+                removed_segments = np.empty((0, 2, 2), dtype=np.float64)
+        with st.spinner("Rendering animation..."):
+            gif_bytes = build_animation_gif(
+                history=history, xs=xs, ys=ys,
+                residual_segments=residual_segments,
+                removed_segments=removed_segments,
+                transmissions_per_step=transmissions_per_step,
+                sizes=node_marker_sizes, n_steps=N_STEPS,
+            )
+
+            # Always compute the full removed-edge geometry for the static tab,
+            # regardless of how the GIF builder above gates them.
+            if removed.size > 0:
+                rp = edges[removed]
+                removed_segments_full = np.stack(
+                    [np.column_stack([xs[rp[:, 0]], ys[rp[:, 0]]]),
+                     np.column_stack([xs[rp[:, 1]], ys[rp[:, 1]]])],
+                    axis=1,
+                )
+            else:
+                removed_segments_full = np.empty((0, 2, 2), dtype=np.float64)
+            removed_png = render_removed_edges_image(
+                xs=xs, ys=ys,
+                residual_segments=residual_segments,
+                removed_segments=removed_segments_full,
+                title=(
+                    f"Removed edges: {POLICY_LABELS[policy_name]} "
+                    f"(budget {budget_fraction:.1%}, {int(removed.size):,} cuts)"
+                ),
+            )
+
+        with st.spinner("Computing aggregate prevalence (50 realizations)..."):
             sis_config = SISConfig(
-                beta=beta,
-                gamma=float(gamma),
-                n_steps=int(n_steps),
-                burn_in=min(int(n_steps) // 2, 100),
-                n_realizations=int(n_realizations),
-                seed=int(seed),
+                beta=beta, gamma=float(gamma),
+                n_steps=N_STEPS, burn_in=100,
+                n_seeds=N_SEEDS, n_realizations=50, seed=SEED,
             )
-            result = run_sis(residual, sis_config)
-            no_intervention = run_sis(adjacency, sis_config)
+            agg_residual = run_sis(residual, sis_config)
+            agg_no_intervention = run_sis(adjacency, sis_config)
 
-        a, b = st.columns([1, 1])
-        with a:
-            figure, axis = plt.subplots(figsize=(5, 3))
-            axis.plot(no_intervention.per_step_prevalence_mean, color="#888", label="no removal")
-            axis.fill_between(
-                np.arange(no_intervention.per_step_prevalence_mean.shape[0]),
-                no_intervention.per_step_prevalence_mean - no_intervention.per_step_prevalence_std,
-                no_intervention.per_step_prevalence_mean + no_intervention.per_step_prevalence_std,
-                color="#888",
-                alpha=0.2,
-            )
-            axis.plot(
-                result.per_step_prevalence_mean,
-                color=POLICY_COLORS.get(policy_name, "C0"),
-                label=POLICY_DISPLAY_NAMES.get(policy_name, policy_name),
-            )
-            axis.fill_between(
-                np.arange(result.per_step_prevalence_mean.shape[0]),
-                result.per_step_prevalence_mean - result.per_step_prevalence_std,
-                result.per_step_prevalence_mean + result.per_step_prevalence_std,
-                color=POLICY_COLORS.get(policy_name, "C0"),
-                alpha=0.25,
-            )
-            axis.set_xlabel("Step")
-            axis.set_ylabel("Fraction infected")
-            axis.set_title(f"{campus_name} (R0={R0:.1f})")
-            axis.legend()
-            axis.grid(alpha=0.25)
-            st.pyplot(figure, clear_figure=True)
-        with b:
-            no_intervention_steady = no_intervention.steady_state_prevalence
-            ci_low, ci_high = result.steady_state_ci95
-            st.markdown(
-                f"### Outcomes\n"
-                f"- **Steady-state prevalence**: {result.steady_state_prevalence:.3f}  "
-                f"(95% CI: {ci_low:.3f}, {ci_high:.3f})\n"
-                f"- **Peak prevalence**: {result.peak_prevalence:.3f}\n"
-                f"- **No-intervention reference**: {no_intervention_steady:.3f}\n"
-                f"- Reduction vs no removal: "
-                f"{(no_intervention_steady - result.steady_state_prevalence):.3f}"
-            )
+        st.session_state["history"] = history
+        st.session_state["gif"] = gif_bytes
+        st.session_state["removed_png"] = removed_png
+        st.session_state["outcomes"] = {
+            "with_policy": agg_residual,
+            "no_intervention": agg_no_intervention,
+        }
+        st.session_state["meta"] = {
+            "policy": policy_name, "R0": R0, "budget": budget_fraction,
+            "n_removed": int(removed.size),
+            "cost_used": float(costs[removed].sum()) if removed.size else 0.0,
+            "recovery": gamma,
+        }
 
-# Frontier from cached results, if available.
-pareto_path = precomputed_pareto_path()
-if pareto_path is not None:
-    df = pd.read_parquet(pareto_path)
-    df_subset = df[(df["campus"] == campus_name) & (np.isclose(df["R0"], R0, atol=1e-3))]
-    if df_subset.empty:
-        st.info(
-            f"No cached Pareto frontier for ({campus_name}, R0={R0:.1f}); run "
-            "`python scripts/04_run_pareto.py` to populate."
-        )
-    else:
-        figure = pareto_frontier(df_subset, R0=R0)
-        st.pyplot(figure, clear_figure=True)
-else:
-    st.info(
-        "Run `python scripts/04_run_pareto.py` to generate cached Pareto frontiers; "
-        "those will appear here automatically."
+history = st.session_state.get("history")
+meta = st.session_state.get("meta")
+gif_bytes = st.session_state.get("gif")
+removed_png = st.session_state.get("removed_png")
+outcomes = st.session_state.get("outcomes")
+
+if gif_bytes is None:
+    figure = render_frame(
+        xs, ys, segments, node_marker_sizes,
+        np.zeros(n_nodes, dtype=bool), 0, N_STEPS,
     )
+    st.pyplot(figure, clear_figure=True, use_container_width=True)
+    st.caption("Configure the sidebar and press **Run simulation** to start.")
+else:
+    st.markdown(
+        f"{POLICY_LABELS[meta['policy']]} + R0={meta['R0']:.1f} + "
+        f"budget={meta['budget']:.1%} + Recovery={meta['recovery']:.2f} + "
+        f"{meta['n_removed']:,} edges removed",
+    )
+    tab_animation, tab_removed, tab_outcomes = st.tabs(
+        ["Animated SIS", "Removed edges", "Outcomes"]
+    )
+    with tab_animation:
+        st.image(gif_bytes, use_container_width=True)
+    with tab_removed:
+        st.image(removed_png, use_container_width=True)
+    with tab_outcomes:
+        result = outcomes["with_policy"]
+        baseline = outcomes["no_intervention"]
+        figure = render_outcomes_chart(result, baseline)
+        st.pyplot(figure, clear_figure=True, use_container_width=True)
+        ci_low, ci_high = result.steady_state_ci95
+        m1, m3, m4 = st.columns(3)
+        m1.metric(
+            "Steady-state prevalence",
+            f"{result.steady_state_prevalence:.3f}",
+            f"{result.steady_state_prevalence - baseline.steady_state_prevalence:+.3f} vs no removal",
+            delta_color="inverse",
+        )
+        m3.metric("Peak prevalence", f"{result.peak_prevalence:.3f}")
+        m4.metric(
+            "No-intervention reference",
+            f"{baseline.steady_state_prevalence:.3f}",
+        )
