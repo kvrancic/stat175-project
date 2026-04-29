@@ -472,16 +472,38 @@ with st.sidebar:
                 st.session_state["active_knob"] = knob
                 st.rerun()
 
+    def _centered_caption(text: str) -> None:
+        st.markdown(
+            f"<div style='text-align:center; color:#6b7280; "
+            f"font-size:0.85em; margin-top:-0.5em;'>{text}</div>",
+            unsafe_allow_html=True,
+        )
+
+    POLICY_DESCRIPTIONS = {
+        "random": "Picks edges to cut uniformly at random.",
+        "betweenness": "Cuts edges that lie on many shortest paths (per unit cost).",
+        "distance_threshold": "Removes friendships between distant community bubbles first.",
+        "gnn": "Learned: shrinks the spectral threshold per $, using GNN-similarity costs.",
+    }
+
     active = st.session_state["active_knob"]
     if active == "R0":
         st.slider(
             "Reproduction number R0", 0.5, 8.0,
             float(st.session_state["knob_R0"]), 0.1, key="knob_R0",
         )
+        _centered_caption(
+            "How transmissible the disease is, scaled to this graph. "
+            "Higher means epidemic spreads further, below 1 it dies out on its own."
+        )
     elif active == "gamma":
         st.slider(
             "Recovery rate gamma", 0.01, 0.5,
             float(st.session_state["knob_gamma"]), 0.01, key="knob_gamma",
+        )
+        _centered_caption(
+            "The probability that a student recovers during a step. "
+            "Higher = shorter infectious period, lower = the disease lingers."
         )
     elif active == "policy":
         st.selectbox(
@@ -489,10 +511,15 @@ with st.sidebar:
             index=POLICY_OPTIONS.index(st.session_state["knob_policy"]),
             format_func=lambda k: POLICY_LABELS[k], key="knob_policy",
         )
+        _centered_caption(POLICY_DESCRIPTIONS[st.session_state["knob_policy"]])
     elif active == "budget":
         st.slider(
             "Cost budget (fraction of total)", 0.0, 0.5,
             float(st.session_state["knob_budget"]), 0.005, key="knob_budget",
+        )
+        _centered_caption(
+            "Fraction of total social cost the policy may spend on cuts. "
+            "Higher = more friendships can be broken, 0 = no intervention."
         )
 
 R0 = float(st.session_state["knob_R0"])
