@@ -1,8 +1,8 @@
 # Lightning Talk Slide Design — Visual Spec
 
-A slide-by-slide description of how the deck **looks**, not what we **say**. The transcript in `lightning-talk.md` is the spoken track; this deck is its supporting visual layer. None of the slides repeat the transcript verbatim. Most slides have under twelve words of body text; many have none.
+A slide-by-slide description of how the deck **looks**. The transcript in `lightning-talk.md` is the spoken track; this deck is its supporting layer. The slides do not echo the transcript verbatim, but they do carry real content — definitions, equations, citations, captions, and the figures from `paper/figures/`. The audience should be able to glance at a slide and pick up something the speaker isn't currently saying out loud.
 
-Designed for a fast click-through cadence (~15-20 seconds per slide on average across 20 slides for a 5-minute talk). The audience should feel momentum, not feel they're being asked to read.
+Designed for a fast click-through cadence (~13-18 seconds per slide on average across 22 slides for a 5-minute talk). Several slides are short interstitials; the figure-driven slides earn an extra beat.
 
 ---
 
@@ -12,328 +12,390 @@ Designed for a fast click-through cadence (~15-20 seconds per slide on average a
 
 **Palette.**
 - **Ink** `#0B1020` — primary background; near-black with a faint blue cast.
-- **Paper** `#F4F1EA` — off-white text and surface accents; warm, not clinical.
-- **Coral** `#FF5A4E` — single primary accent, used for the GNN curve, the headline metric, and the "above threshold" zone.
-- **Mint** `#7FE7B5` — secondary accent for the "below threshold / contained" zone, distance-threshold curve.
-- **Slate** `#3A4256` — muted grey-blue for axis labels, baselines, betweenness curve.
-- **Mist** `#9FA8B8` — tertiary, used for the random baseline curve and footnotes.
-
-The deck never uses pure white or pure black — everything is slightly warmed to feel like printed paper rather than a screen.
+- **Paper** `#F4F1EA` — off-white text.
+- **Coral** `#FF5A4E` — primary accent; the GNN curve, headline metrics, the "above threshold" zone.
+- **Mint** `#7FE7B5` — secondary accent; the "below threshold / contained" zone, distance-threshold curve.
+- **Slate** `#3A4256` — muted grey-blue; axis labels, baselines, betweenness curve.
+- **Mist** `#9FA8B8` — tertiary; random baseline curve, footnotes, captions.
 
 **Typography.**
-- Display: **Inter Tight** in weights 700 and 900 for slide titles.
-- Body: **Inter** 400/500 for the rare moments there is body text.
-- Monospace: **JetBrains Mono** for equations rendered with a subtle ligature for `<-`, `->`, `λ`, `τ`.
-- Math is rendered through KaTeX-quality typesetting (think: nice italic Greek, properly kerned subscripts), not Unicode glyphs.
+- Display: **Inter Tight** 700/900 for slide titles.
+- Body: **Inter** 400/500.
+- Monospace / equations: **JetBrains Mono** with KaTeX-quality math typesetting.
+- Body text size 22-28 pt; titles 36-48 pt.
 
-**Recurring chrome.**
-- A 1-pixel coral hairline runs along the bottom 14% of every slide. It functions as a "cost budget bar": the bar **fills from left to right** across the entire 20-slide deck. By Slide 20, it's full. This is the deck's quiet visual joke — the talk itself is a budget that gets spent.
-- Bottom-right corner: a tiny tag that cycles speaker names (`Karlo` → `Alec` → `Jackson` → `Ryan`) in a 50% opacity Inter 400, so the audience always knows who is talking without anyone having to introduce themselves mid-talk.
-- Bottom-left corner: slide number rendered as a **percentage** (`05% / 100%`) instead of `5 / 20`. Reinforces the budget metaphor.
-- A faint, animated 30-node graph drifts slowly in the upper-right of every slide at 8% opacity. Same graph, same node positions, but the **edge set thins out** as the deck progresses — by Slide 20, only ~40% of the original edges remain. The audience may or may not notice; if they do, it's a wink at what the project is about.
+**Recurring chrome (kept light).**
+- Bottom-right speaker tag: `KARLO` / `ALEC` / `JACKSON` / `RYAN` in JetBrains Mono 14 pt, Coral, 60% opacity. The handoff slides change it explicitly.
+- Bottom-left slide number: `13 / 22` in JetBrains Mono 14 pt, Slate.
+- Top-right: project shorthand in Mist 12 pt: `STAT 175 · cost-aware edge removal`.
+- A 1 px coral hairline along the bottom 4% of every slide separates chrome from content.
 
-**Transitions.**
-- Slide-to-slide: a 220 ms horizontal wipe with a soft cubic-bezier ease (`0.22, 0.61, 0.36, 1`).
-- Within-slide builds: 180 ms fade-up with 8 px translate. Never spinning, never flying — feels like cards being placed, not animated.
+**Transitions.** Slide-to-slide: 220 ms horizontal wipe with cubic-bezier `(0.22, 0.61, 0.36, 1)`. Within-slide builds: 180 ms fade-up + 8 px translate.
 
-**No clipart. No stock photos. No bullet-point template chrome.** Everything is custom data viz, custom typography, or empty space.
+**Pacing convention.**
+- Title slides and section dividers: 6-10 seconds.
+- Content slides with definitions / equations: 12-18 seconds.
+- Figure slides: 18-25 seconds (the audience needs time to read the plot).
+
+---
+
+## Figure assets index (use these — they already exist)
+
+All figures below are pre-rendered in `paper/figures/`. Every relevant slide has an explicit `[PLACEHOLDER → <path>]` marker indicating which file to drop in. **Do not regenerate these — they are produced by `scripts/08_make_figures.py` from the locked seeds.**
+
+| File | Used on slide |
+|---|---|
+| `paper/figures/main_pareto_R0_0.8.png` | Slide 14 (subcritical regime, optional inset) |
+| `paper/figures/main_pareto_R0_1.5.png` | **Slide 13 (HEADLINE)** |
+| `paper/figures/main_pareto_R0_3.0.png` | Slide 14 (panel B) |
+| `paper/figures/main_pareto_R0_6.0.png` | Slide 14 (panel C — flip) |
+| `paper/figures/main_ranking_R0_1.5.png` | Slide 15 |
+| `paper/figures/main_ranking_R0_3.0.png` | Slide 15 (alternate) |
+| `paper/figures/robustness_compliance_R0_1.5.png` | Slide 16 |
+| `paper/figures/robustness_sir_R0_1.5.png` | Slide 17 (left) |
+| `paper/figures/robustness_adversarial_seed_R0_1.5.png` | Slide 17 (right) |
+| `paper/figures/ablation_gnn_arch_R0_3.0.png` | Slide 18 |
+| `paper/figures/ablation_cost_function_R0_3.0.png` | Slide 19 |
+| `paper/figures/ablation_synthetic_topology_R0_3.0.png` | Slide 20 (optional) |
+| `paper/figures/cross_campus_regression.png` | Slide 20 |
+
+Numerical figures cited inline (already in `results/summary/headline_numbers.json`):
+- GNN @ R₀=1.5, 5% budget: prevalence reduction of **+0.0402** (4.0 pp).
+- Distance Threshold @ same: **+0.0222** (2.2 pp).
+- Edge Betweenness @ same: **+0.0171** (1.7 pp).
+- Random baseline @ same: **+0.0158** (1.6 pp).
+
+The web-app screenshot for Slide 21 does **not yet exist**: take a fresh capture of `webapp/app.py` running locally with `R₀ = 1.5`, `Budget = 5%`, `Caltech36`, GNN policy selected; save as `presentation/assets/webapp_screenshot.png`.
 
 ---
 
 ## Slide 1 — Title
 
-**Speaker:** Karlo (~12 s)
-
-**Layout.** Full-bleed Ink background. A single slow-rotating force-directed graph fills the left half at 35% opacity, with edges pulsing faintly between mint and coral as if a contagion is rippling across them — but in reverse, the pulse always damps out before reaching the right edge. Subliminal: containment.
-
-**Right half.** Vertically centered:
-- Pre-title in Coral, all caps, letter-spaced 0.18em: `STAT 175 · FINAL PROJECT`
-- Title in Paper, Inter Tight 900, 84 pt, max two lines:
-  > Cost-Constrained Edge Removal
-  > for Epidemic Containment
-- Subtitle in Mist, 28 pt, italic: `On the social graphs of five U.S. universities.`
-- Author line, 22 pt, Paper at 70% opacity: `Karlo Vrančić · Alec [Lastname] · Jackson [Lastname] · Ryan [Lastname]`
-- Date stamp, JetBrains Mono, 18 pt, Slate: `Spring 2026 · Prof. Austern`
-
-**Easter egg.** The pulsing color of the graph follows the speaking cadence — when Karlo's voice picks up, the pulses speed up. (If we don't have audio reactivity, fake it with a fixed 1.2 Hz pulse that feels like a calm heartbeat.)
-
----
-
-## Slide 2 — The premise
-
 **Speaker:** Karlo (~10 s)
 
-**Layout.** Three stacked words, centered, large.
+**Layout.** Full-bleed Ink background. Left half: a slow-rotating force-directed visualization of Caltech36 at 30% opacity, edges in Mist. Right half: vertically centered text block.
 
-```
-WHO MEETS WHOM
-```
+**Content.**
+- Pre-title in Coral, all caps, letter-spaced 0.18em: `STAT 175 · FINAL PROJECT · SPRING 2026`
+- Title in Paper, Inter Tight 900, 72 pt, two lines:
+  > Cost-Constrained Edge Removal
+  > for Epidemic Containment
+- Subtitle in Mist, Inter 400 italic, 26 pt:
+  > Learning the cost of breaking a friendship.
+- Author block, 22 pt, Paper at 80% opacity, two columns:
+  > Karlo Vrančić &nbsp; Alec [Lastname]
+  > Jackson [Lastname] &nbsp; Ryan [Lastname]
+- Footer, JetBrains Mono 16 pt, Slate: `UC Berkeley · Prof. Austern · 28 April 2026`
 
-In Inter Tight 900, 160 pt, Paper. No subtitle. No body text. Negative space everywhere.
-
-The animated graph drifts very slowly behind the text, cropped tight so individual edges are visible.
-
-**Build.** The phrase enters one word at a time, 200 ms apart. After all three land, the word `MEETS` glows briefly in Coral, then settles back to Paper.
-
-The point of this slide is to land the word "meets" — the unit of analysis is an edge, not a person.
-
----
-
-## Slide 3 — The constraint
-
-**Speaker:** Karlo (~12 s)
-
-**Layout.** Split into two halves by a thin vertical hairline in Slate.
-
-**Left half.** A small icon row, Inter Tight 600, 36 pt:
-
-> **Lockdowns.** Closed schools. Travel bans.
-
-Each phrase has a tiny strikethrough that draws itself in over the prior phrase as Karlo speaks. The phrases gray out one by one — a visual purge of the obvious answers.
-
-**Right half.** A single phrase in Coral, 56 pt:
-
-> **You don't remove people.**
-> **You remove ties.**
-
-The word `ties` is underlined with a hand-drawn-style coral squiggle that completes after a 400 ms delay.
-
-Easter egg: the strike-throughs on the left are hand-drawn SVGs that look like marker scratches, slightly imperfect — a small humanizing touch in an otherwise clean design.
+**Background graphic.** The rotating Caltech36 visualization is real — produced by `pyvis` over `data/processed/Caltech36.npz`. Render once, embed as PNG.
 
 ---
 
-## Slide 4 — The question
+## Slide 2 — Why edge removal
 
-**Speaker:** Karlo → handoff to Alec (~10 s)
+**Speaker:** Karlo (~14 s)
 
-**Layout.** Single slide, full-width text block, vertically centered.
+**Layout.** Left: a short bulleted list. Right: a small table mapping policy → real-world counterpart.
 
-The headline question, Inter Tight 700, 56 pt, in Paper:
+**Left.** Title `WHAT INTERVENTIONS LOOK LIKE`, Inter Tight 700, 32 pt, Paper. Body, Inter 400, 22 pt, Mist for the lead-in / Paper for the items:
 
-> What is the **lowest-cost** set of edges to cut
-> so the disease stays under control?
+> Public-health interventions don't remove people. They restrict who can meet whom:
+> - school closures
+> - dorm reassignments
+> - contact-tracing isolation
+> - travel restrictions
+> - gathering size limits
 
-The two phrases `lowest-cost` and `under control` are highlighted with a 6 px Coral underline. Everything else is Paper.
+**Right.** A compact 3-column table, Inter 500, 18 pt, with Slate hairlines:
 
-Below the question, in Slate, JetBrains Mono, 22 pt — a stripped formal restatement that reads like a function signature:
+| Real intervention | Edge-set affected | Cost |
+|---|---|---|
+| Dorm reassignment | within-dorm ties | high |
+| Class cancellation | classmate ties | medium |
+| Travel ban | between-campus ties | depends on connectivity |
+| Quarantine cluster | one node's full neighborhood | very high |
 
-```
-minimize  Σ cost(e)  s.t.  prevalence(G \ E_cut) < threshold
-        e ∈ E_cut
-```
-
-This is the only slide where the audience is asked to read math-y text. It's the formalization moment. The transition out is unusually slow (340 ms) so the formal version sticks.
+**Caption below the table**, Mist 14 pt: `The cost depends on which ties are broken — that's the framing this project starts from.`
 
 ---
 
-## Slide 5 — The model
+## Slide 3 — The formal problem
+
+**Speaker:** Karlo → handoff to Alec (~14 s)
+
+**Layout.** Centered formal optimization problem, with annotations to the side.
+
+**Center.** A boxed equation block, JetBrains Mono 28 pt, Paper:
+
+```
+minimize    Σ  c(e)
+            e ∈ E_cut
+
+subject to  prevalence_∞( G \ E_cut ) ≤ θ
+            E_cut ⊆ E
+```
+
+**Right-side annotations**, Mist 16 pt, with thin Slate leader lines:
+- `c(e) = σ(⟨x_u, x_v⟩)` — the cost proxy, defined on Slide 7.
+- `prevalence_∞` — steady-state SIS infected fraction.
+- `θ` — the public-health tolerance.
+- `G \ E_cut` — the residual graph after cuts.
+
+**Bottom caption**, Mist 14 pt: `Equivalently: a cost-weighted variant of the immunization problem (Tong et al. 2012; Saha et al. 2015).`
+
+**Why this slide exists.** The transcript stays informal at this point; the slide gives the audience the formal version so technical viewers can lock in.
+
+---
+
+## Slide 4 — Five campuses
+
+**Speaker:** Alec (handoff arrives here, ~10 s)
+
+**Layout.** A 5-column comparison table, with each campus as a vertical card.
+
+**Top of each card** (Inter Tight 700, 24 pt, Paper):
+- `Caltech36`
+- `Bowdoin47`
+- `Harvard1`
+- `Penn94`
+- `Tennessee95`
+
+**Each card body** (Inter 400, 16 pt, four rows, Mist labels / Paper values):
+- `n =` (giant component size)
+- `m =` (giant component edges)
+- `clustering =` (global clustering coefficient)
+- `λ_1 =` (leading eigenvalue)
+
+> Approximate values from `results/summary/threshold_sanity.json` — fill in when generating the deck. Caltech36 ≈ 762 nodes; Penn94 ≈ 41 000 nodes. Clustering range ≈ 0.13–0.26.
+
+**Bottom caption**, Mist 14 pt:
+> Five Facebook100 campuses, chosen for diversity in global clustering coefficient. Loaded from the `.mat` files at archive.org/details/oxford-2005-facebook-matrix and restricted to the giant component. Node attributes: dorm, year, major, gender, status, high school.
+
+---
+
+## Slide 5 — SIS dynamics
 
 **Speaker:** Alec (~14 s)
 
-**Layout.** Centered SIS compartment diagram, animated.
+**Layout.** Left: SIS compartment diagram. Right: a short definition block.
 
-Three large rounded squares horizontally arranged, each 240×240, with 80 px gaps:
+**Left.** Two large rounded squares — `S` (Mint) and `I` (Coral) — with two arrows:
+- S → I labeled `β · (# infected neighbors)`
+- I → S labeled `γ`
 
-- `[ S ]` in Mint
-- `[ I ]` in Coral
-- (back to S)
+A small marker dot animates slowly between the two states while the slide is on screen.
 
-Two arrows:
-- S → I labeled `β · (# infected neighbors)` in JetBrains Mono, 22 pt
-- I → S labeled `γ` in JetBrains Mono, 22 pt, looping back via a curved arrow above the diagram
+**Right.** Title `SUSCEPTIBLE → INFECTED → SUSCEPTIBLE`, Inter Tight 700, 22 pt, Paper. Body, Inter 400, 20 pt:
 
-Below the diagram, four lines arrange as a tight footnote in Mist, 18 pt:
-> Susceptible · Infected · Susceptible — recovery without immunity. The COVID-style assumption.
+> Each step (discrete time):
+> - infected → susceptible w.p. γ
+> - susceptible → infected w.p. 1 − (1 − β)^k
+>   where k = # infected neighbors
 
-**Build.** A small marker dot starts in `S`, animates rightward to `I` (green→red transition mid-flight), pauses, then loops back along the upper arrow to `S`. Repeats slowly while Alec speaks.
+> Why SIS, not SIR:
+> - mimics endemic respiratory diseases without permanent immunity
+> - admits a non-trivial steady-state (the primary outcome)
 
-**Easter egg.** Watch carefully — every fifth cycle, the dot doesn't recover. A trail of red marker dots accumulates faintly in `I`. By the time Alec says "endemic," there are 5-6 dots stuck. (Subliminal: this is the endemic regime.)
+**Bottom caption**, Mist 14 pt: `Pastor-Satorras & Vespignani (2001); implementation in src/stat175/sim/sis.py.`
 
 ---
 
-## Slide 6 — The threshold
+## Slide 6 — The spectral threshold
 
 **Speaker:** Alec (~16 s)
 
-**Layout.** Left-right split, 50/50.
+**Layout.** Left: the canonical phase-transition plot. Right: equation + intuition.
 
-**Left.** A clean phase-transition plot.
-- X-axis: `R₀ = β · λ₁(A) / γ`, JetBrains Mono 16 pt.
-- Y-axis: `Steady-state prevalence`.
-- A canonical sigmoidal curve rises from 0 around R₀ = 1 and saturates near 0.7.
-- A thin Slate vertical dashed line at `R₀ = 1`, labeled `τ_c` in italic.
-- The region left of the dashed line is shaded **Mint** at 18% alpha; the region right is shaded **Coral** at 18% alpha.
-- Two small floating labels: "dies out" (mint, left), "endemic" (coral, right).
+**Left.** A clean illustrative plot, hand-drawn quality:
+- X-axis: `R₀ = β · λ₁(A) / γ`, ticks at 0.5, 1, 2, 4.
+- Y-axis: `steady-state prevalence`, 0 to 0.6.
+- A sigmoidal curve crossing zero around R₀ = 1.
+- Vertical dashed Slate line at `R₀ = 1`, labeled `τ_c`.
+- Mint shading left of `τ_c`, Coral shading right.
+- Floating labels: `dies out` (mint), `endemic` (coral).
+- A small Coral pin marker on the curve at R₀ ≈ 1.5 — labeled `our headline R₀`.
 
-**Right.** A single equation, JetBrains Mono 56 pt, centered:
+> Generate this from `results/summary/threshold_sanity.json` if a real version is preferred over an illustration; otherwise use a hand-drawn schematic.
+
+**Right.** Title `EPIDEMIC THRESHOLD`, Inter Tight 700, 28 pt, Paper. Body, JetBrains Mono 32 pt for the equation:
 
 > τ_c = 1 / λ₁(A)
 
-Above the equation in Mist 18 pt: `Wang, Chakrabarti, Wang, Faloutsos (2003)`.
+Below the equation, Inter 400, 20 pt:
 
-Below the equation in Paper 22 pt: `Cut edges → shrink λ₁ → push τ_c right → contain.`
+> The SIS process dies out iff β/γ < τ_c.
+> Cutting edges shrinks λ₁(A), which raises τ_c, which pushes the system toward the contained regime.
 
-**Build.** The phase-transition curve draws itself left-to-right in 700 ms when the slide opens. The equation fades in 200 ms after the curve completes.
+**Bottom caption**, Mist 14 pt: `Wang, Chakrabarti, Wang & Faloutsos (2003).`
 
-**Easter egg.** A tiny coral pin marker sits on the curve, just barely above the threshold, around R₀ ≈ 1.5. Its position is exactly where most of our headline results live. Audience won't catch this on first viewing; speakers can if they look down at the laptop.
+**R₀ values we sweep:** `0.8, 1.5, 3.0, 6.0` — listed in a small JetBrains Mono 16 pt strip below the equation. The 1.5 value is highlighted in Coral.
 
 ---
 
-## Slide 7 — The cost
+## Slide 7 — Cost function
 
 **Speaker:** Alec (~16 s)
 
-**Layout.** Three-column visual.
+**Layout.** Left: equation + feature list. Right: a small worked example.
 
-**Column 1 — features.** Two stacked illustrations of a node's feature vector, rendered as a small grid of 6×3 cells:
-- Top: `Alice` — cells colored by category (`dorm: Adams · year: 2024 · major: CS · gender: F`), shown as 18 mostly-empty cells with 4 highlighted in Coral.
-- Bottom: `Bob` — same grid, 4 highlighted cells, partially overlapping with Alice's.
+**Left.** Title `COST = SIMILARITY`, Inter Tight 700, 28 pt, Paper.
 
-Above the grids, in Mist 16 pt: `One-hot encoding · L2-normalized`.
+Equation block, JetBrains Mono 28 pt:
 
-**Column 2 — operation.** A massive circle-symbol stack, Inter Tight 900, vertically centered:
+> c(u, v) = σ( ⟨x_u, x_v⟩ )
 
-> ⟨ x_u , x_v ⟩
+Below it, Inter 400, 20 pt:
 
-Below it, in JetBrains Mono 28 pt: `→ σ(·)`
+> Each node carries a one-hot feature vector over six attributes (`dorm, year, major, gender, status, high-school`). Vectors are L2-normalized. Missing values are their own category.
 
-**Column 3 — cost.** A single number rendered huge: `0.71`, Inter Tight 900, 120 pt, Coral. Below it, in Paper 22 pt: `expensive edge`.
+**Right.** A worked example in two stacked rows:
 
-**Build.** Cells in Column 1 highlight one-by-one; the dot-product symbol in Column 2 pulses; the cost number in Column 3 ticks up rapidly from `0.50` to `0.71` over 600 ms (counter animation).
+Row 1 — `Alice` and `Bob`, both freshmen in Adams Hall majoring in CS:
+- Their feature vectors share 4 of 6 hot indices.
+- `⟨x_Alice, x_Bob⟩ ≈ 0.67`
+- `c = σ(0.67) ≈ 0.66` — **expensive edge** (Coral).
 
-**Easter egg.** A second mini-example flashes for 800 ms after the first lands: a 2nd `0.53` (mint) appears beneath the `0.71`, labeled `acquaintance — cheap`. Then it fades. Reinforces "high cost = similar = close friend" without saying it aloud.
+Row 2 — `Alice` and `Carol`, freshman vs senior, different dorm, different major:
+- Their feature vectors share 0 of 6 hot indices.
+- `⟨x_Alice, x_Carol⟩ ≈ 0.0`
+- `c = σ(0.0) = 0.50` — **cheaper edge** (Mint).
+
+**Bottom caption**, Mist 14 pt:
+> Observed cost band on real Facebook100 features: `c ∈ [0.50, 0.73]`. The narrow range is documented in `WARNINGS.md` and motivates the cost-function ablation (Slide 19).
 
 ---
 
-## Slide 8 — Four policies
+## Slide 8 — The four policies
 
 **Speaker:** Jackson (~12 s)
 
-**Layout.** A 2×2 grid of cards. Each card is 720×360, with 80 px gutters. Ink background; cards have a subtle 1 px Slate border and a tiny coral corner accent in the top-left.
+**Layout.** A 2×2 grid of cards, each 660×320, with a one-sentence description.
 
-Each card contains:
-- Top-left: a single rank number (`01`, `02`, `03`, `04`) in JetBrains Mono 28 pt, Coral.
-- Center: a small custom icon (described below), 120×120, Mint stroke on Ink.
-- Bottom: a one-word label, Inter Tight 700, 32 pt, Paper.
+**Cards** (Inter Tight 700, 26 pt for the title; Inter 400, 18 pt for the body):
 
-**Cards.**
-1. `Random` — icon: a fistful of broken-line edges scattered randomly.
-2. `Betweenness` — icon: a bridge-shaped graph with one central edge highlighted Coral.
-3. `Distance` — icon: three concentric Mint circles (community bubbles) with edges between rings highlighted Coral.
-4. `GNN` — icon: a small network with a stylized neural-net "lens" overlay (three small dots → larger dot).
+| | |
+|---|---|
+| **1. Random** *(baseline)* | Pick edges uniformly until budget exhausted. The floor every other policy must beat. |
+| **2. Edge betweenness / cost** *(classical)* | Rank edges by `betweenness(e) / c(e)`, greedy fill. NetworkX with `k=300` pivot sampling on Penn94 / Tennessee95 (Brandes 2008). |
+| **3. Distance Threshold** *(realistic)* | Louvain communities → meta-graph → cut edges between communities at hop-distance > X. The "stay in your bubble" policy. |
+| **4. GNN policy** *(novel)* | 2-layer GraphSAGE → 16-dim embeddings → cost = σ(⟨z_u, z_v⟩) → score = NetMelt eigenscore / cost. |
 
-**Build.** All four cards fade in simultaneously, but the borders draw themselves left-to-right across the 2×2 grid like a TV scan-line. Total animation: 500 ms.
+The fourth card has a Coral border (1.5 px) to flag it as the novel contribution. The other three have a thin Slate border (1 px).
 
-After Jackson names the policies, the GNN card's coral corner-accent **expands** into a thin coral border around the entire card — a visual cue that this is the novel one — and stays that way through Slide 9 (continuous between slides).
+**Bottom caption**, Mist 14 pt: `All four implement the same Policy interface in src/stat175/policies/. Locked by Project Outline §3.`
 
 ---
 
-## Slide 9 — Three are obvious
-
-**Speaker:** Jackson (~18 s)
-
-**Layout.** A horizontal scroll of three vignettes, each 33% width. The vignettes are tight, micro-illustrated, with one short label.
-
-**Vignette 1 — Random.**
-- Visual: a small graph (~30 nodes); about 8 edges flicker and disappear at random.
-- Label below, Mist 18 pt: `the floor`.
-
-**Vignette 2 — Betweenness / cost.**
-- Visual: the same graph with a single bridge edge highlighted Coral, then deleted in a slow fade.
-- Label below, Mist 18 pt: `bang for buck`.
-
-**Vignette 3 — Distance threshold.**
-- Visual: the same graph partitioned into three Mint-shaded community bubbles by Louvain; cross-bubble edges fade out one by one.
-- Label below, Mist 18 pt: `stay in your bubble`.
-
-A tiny line connects the three vignettes at the top, like a ruler with tick marks at `naive`, `classical`, `realistic`. The ruler is JetBrains Mono 14 pt, Slate.
-
-**Easter egg.** The graphs in all three vignettes are the **same** initial graph, just with different cuts applied — so the audience can visually compare which cuts each policy makes. None of the speakers point this out; the parallelism does the work.
-
----
-
-## Slide 10 — The novel one
-
-**Speaker:** Jackson (~22 s)
-
-**Layout.** Centered architecture diagram, 80% slide width.
-
-A horizontal flow with five labeled stages, connected by Slate arrows:
-
-```
-[ feature matrix X ]
-        ↓
-[ TruncatedSVD → 64-dim ]
-        ↓
-[ GraphSAGE × 2 layers ]   ← labeled "self-supervised on link prediction"
-        ↓
-[ embeddings  z_v ∈ R^16 ]
-        ↓
-[ cost(u,v) = σ(⟨z_u, z_v⟩) ]
-```
-
-Each stage is a rounded rectangle with a 1 px Mist border. The middle stage (`GraphSAGE`) is filled with Coral at 8% alpha to highlight that it's the learned component.
-
-A second arrow exits the bottom of the final stage:
-
-```
-       ↓
-[ score(e) = (u_i v_j + u_j v_i) / cost(u,v) ]   ← in JetBrains Mono 22 pt
-       ↓
-[ greedy fill until budget ]
-```
-
-The phrase `(u_i v_j + u_j v_i)` is annotated with a tiny floating label in Mist 14 pt: `NetMelt eigenscore (Tong 2012)`. The annotation has a thin leader line.
-
-**Build.** The diagram draws itself one stage at a time, with a 250 ms beat between each. The annotations appear last. Total: ~1.5 s.
-
-**Easter egg.** The arrow between `GraphSAGE` and `embeddings` is animated — small Coral dots travel down the arrow continuously, slow, suggesting messages passing in a graph neural network.
-
----
-
-## Slide 11 — Why bother training a model
+## Slide 9 — Random and Betweenness
 
 **Speaker:** Jackson (~14 s)
 
-**Layout.** Two side-by-side columns. Left labeled `HAND-DESIGNED`, right labeled `LEARNED`. Big serifed labels in Inter Tight 700, 28 pt, Paper.
+**Layout.** Two equal columns, each with a label, a one-line definition, and a tiny cartoon graph.
 
-**Left.**
-- A small text snippet in JetBrains Mono 18 pt:
-  ```
-  cost(u,v) = σ(<x_u, x_v>)
-  ```
-- Below it, in Mist 16 pt: `Same dorm? Same year? Probably close.`
-- Sketch of two stick-figure faces with overlapping social circles.
+**Left — Random.**
+- Title `RANDOM`, Inter Tight 700, 28 pt, Slate.
+- Definition, Inter 400, 18 pt:
+  > Sample edges uniformly without replacement until cumulative cost reaches the budget.
+- Why include it:
+  > Bounds the "do nothing intelligent" baseline. Any cost-aware method should clear it.
+- Tiny illustration: 30-node graph, 8 random edges crossed out.
 
-**Right.**
-- A small text snippet in JetBrains Mono 18 pt:
-  ```
-  cost(u,v) = σ(<z_u, z_v>)
-  ```
-- Below it, in Mist 16 pt: `What does the graph itself say about closeness?`
-- Sketch of the same two faces, but now connected through a flickering web of secondary nodes — implying that the model picks up shared neighbors, second-order ties, etc.
+**Right — Edge Betweenness.**
+- Title `EDGE BETWEENNESS / COST`, Inter Tight 700, 28 pt, Slate.
+- Definition, Inter 400, 18 pt:
+  > For each edge `e`, compute `betweenness(e)` (fraction of shortest paths through `e`). Score = `betweenness(e) / c(e)`. Greedy by score.
+- Notes:
+  > k=300 pivot sampling on the two largest campuses (~5×10¹⁰ ops at exact). Documented in `WARNINGS.md`.
+- Tiny illustration: same 30-node graph, the 4 highest-betweenness bridges highlighted Coral.
 
-The two columns are separated by a thin vertical Coral hairline. At the bottom, a single line in Paper 24 pt:
-
-> The cost function is what's learned.
-
-Underlined word: `learned`.
+**Bottom caption**, Mist 14 pt: `Bang-for-buck framing: if a structural bottleneck is also socially cheap, cut it first.`
 
 ---
 
-## Slide 12 — Handoff card
+## Slide 10 — Distance Threshold (the "realistic" one)
 
-**Speaker:** Jackson → Ryan (~5 s)
+**Speaker:** Jackson (~16 s)
 
-A throwaway transition slide, intentionally minimal:
+**Layout.** Left: visualization of the policy. Right: explanation.
 
-- Centered, single line, Inter Tight 700, 72 pt, Paper:
-  > **Does it work?**
-- Below, in Mist 24 pt: `Five campuses. Four policies. Eight budgets.`
+**Left.** A 50-node graph, partitioned into 4 community bubbles via Louvain (each bubble shaded a different muted color). Edges within bubbles are kept (Mist). Cross-bubble edges are colored by meta-graph hop distance:
+- `d = 1` (adjacent bubbles): Slate, kept.
+- `d ≥ 2`: Coral, marked for removal.
 
-The chrome budget-bar at the bottom is now ~60% filled. The number tag at the bottom-left reads `60% / 100%`.
+A small legend in the corner: `bubble distance`.
 
-This slide is on screen for under 4 seconds. It exists to give Ryan a clean visual reset before the results.
+**Right.** Title `DISTANCE THRESHOLD`, Inter Tight 700, 28 pt, Paper. Body, Inter 400, 20 pt:
+
+> Step 1. Run Louvain on the residual graph → community labels.
+> Step 2. Build the meta-graph (one node per community).
+> Step 3. For threshold X, cut edges (u, v) with `d_meta(c_u, c_v) > X`.
+> Step 4. X is the budget knob — sweep it.
+
+> **Why this is the policy a government can actually run.** It maps to "you're allowed to interact within your dorm-and-class bubble; not across bubbles." No per-edge optimization; just one threshold.
+
+**Bottom caption**, Mist 14 pt: `Implemented in src/stat175/policies/distance_threshold.py.`
+
+---
+
+## Slide 11 — The GNN pipeline
+
+**Speaker:** Jackson (~22 s)
+
+**Layout.** Centered architecture diagram, top half. Bottom half: training objective + score function.
+
+**Top half — pipeline diagram.** Five horizontal stages with arrows:
+
+```
+[ X ∈ R^{n × 598} ]  →  [ TruncatedSVD → R^{n × 64} ]  →  [ SAGE × 2 layers ]  →  [ z ∈ R^{n × 16} ]  →  [ c(u,v) = σ(⟨z_u, z_v⟩) ]
+```
+
+Each stage is a rounded rectangle, 1 px Mist border. The middle stage `SAGE × 2 layers` is filled with Coral at 8% alpha to indicate the learned component.
+
+Annotations in JetBrains Mono 14 pt below specific stages:
+- Below `TruncatedSVD`: `(speed-up; documented in WARNINGS.md)`.
+- Below `SAGE × 2`: `hidden_dim=32, embed_dim=16, dropout=0.5`.
+- Below `cost`: `analogous to the hand-designed σ(⟨x_u, x_v⟩)`.
+
+**Bottom half.** Two side-by-side panels.
+
+*Left — Training objective:*
+
+> **Self-supervised link prediction.**
+> - positive pairs = real edges
+> - negative pairs = sampled non-edges
+> - loss = BCE on `σ(⟨z_u, z_v⟩)`
+> - 40 epochs, Adam, lr = 1e-3
+> - per-campus encoder; ≈ 14 minutes per campus locally
+
+*Right — Edge score:*
+
+> **NetMelt eigenscore (Tong et al. 2012):**
+> `score(e) = (u_i · v_j + u_j · v_i) / c(u, v)`
+> where `u, v` are the leading eigenvectors of the adjacency.
+> Greedy fill until budget exhausted.
+
+**Bottom caption**, Mist 14 pt: `Implemented in src/stat175/models/gnn.py + src/stat175/policies/gnn_policy.py.`
+
+---
+
+## Slide 12 — What's actually novel
+
+**Speaker:** Jackson → handoff to Ryan (~12 s)
+
+**Layout.** Two columns separated by a thin Coral hairline.
+
+**Left — Hand-designed cost.**
+- JetBrains Mono 22 pt: `c(u, v) = σ(⟨x_u, x_v⟩)`
+- Inter 400, 18 pt:
+  > Same dorm? Same major? Probably close. Encoded by hand from the feature schema.
+
+**Right — Learned cost.**
+- JetBrains Mono 22 pt: `c(u, v) = σ(⟨z_u, z_v⟩)`
+- Inter 400, 18 pt:
+  > Embedding similarity learned from local neighborhoods. Captures shared neighbors, second-order ties, structural roles — properties no hand-designed feature combination expresses.
+
+**Bottom strip**, full-width, Coral 24 pt centered:
+> The cost function itself is what's learned end-to-end. The architecture is a means.
 
 ---
 
@@ -341,220 +403,293 @@ This slide is on screen for under 4 seconds. It exists to give Ryan a clean visu
 
 **Speaker:** Ryan (~22 s)
 
-**Layout.** A single, large, beautifully typeset Pareto-frontier plot, 75% slide width, centered. Margins: generous.
+**Layout.** Single Pareto frontier figure, 80% slide width, centered. Headline numbers in a sidebar to the right.
 
-**Plot details.**
-- X-axis: `cost budget (% of total)`, ticks at `0`, `0.5`, `1`, `2`, `5`, `10`, `20`, `40`. Logish spacing.
-- Y-axis: `steady-state prevalence`, 0 to 0.6.
-- Four curves:
-  - **GNN** in Coral, 3 px stroke, with a soft 8 px Coral glow. Marker dots at every tick.
-  - **Distance Threshold** in Mint, 2 px stroke. Square markers.
-  - **Edge Betweenness** in Slate, 2 px stroke. Triangle markers.
-  - **Random** in Mist, 1.5 px stroke, dashed. Small open-circle markers.
-- All four curves descend roughly monotonically; GNN sits visibly below the others in the 0-10% budget range, then converges with the others by 40%.
-- A vertical Slate dashed line at `5%` budget. At its intersection with each curve, a small annotation in JetBrains Mono 14 pt:
-  - GNN: `−4.0 pp`
-  - Distance: `−2.2 pp`
-  - Betweenness: `−1.7 pp`
-  - Random: `−1.6 pp`
-- The GNN annotation is in Coral 16 pt and bolder than the others.
-- Title above the plot, Inter Tight 700, 28 pt, Paper: `R₀ ≈ 1.5 — near the threshold`.
-- Caption below in Mist 14 pt: `Mean over 50 stochastic SIS runs · 95% bootstrap CIs · Caltech36, Bowdoin47, Harvard1, Penn94, Tennessee95.`
+**Center.**
 
-**Build.** Curves animate left-to-right one at a time in stacking order: Random → Betweenness → Distance → GNN. Each takes 600 ms. The 5% annotation appears last with a soft fade and a small "tick" sound (if audio is enabled — visual only otherwise).
+> **[PLACEHOLDER → `paper/figures/main_pareto_R0_1.5.png`]**
 
-**Easter egg.** The Coral glow around the GNN curve subtly pulses at the same 1.2 Hz heartbeat as the title slide. Continuity.
+Caption below the figure, Mist 14 pt:
+> Cost budget vs steady-state SIS prevalence at R₀ = 1.5. Mean over 50 stochastic realizations per cell, 95% bootstrap CIs. Five campuses pooled.
+
+**Sidebar (right).** Title `AT 5% BUDGET`, Inter Tight 700, 22 pt, Paper. Then a 4-row stack:
+- `GNN`: **−4.0 pp** (Coral, bold)
+- `Distance`: −2.2 pp (Mint)
+- `Betweenness`: −1.7 pp (Slate)
+- `Random`: −1.6 pp (Mist)
+
+**Top-left badge**, Inter Tight 700, 22 pt, Coral: `R₀ = 1.5 — near the threshold`.
 
 ---
 
-## Slide 14 — But the picture flips
+## Slide 14 — How it depends on R₀
+
+**Speaker:** Ryan (~22 s)
+
+**Layout.** Three Pareto plots arranged horizontally — sub-critical, near-threshold (recap), endemic — to show the regime sweep.
+
+**Three panels** (33% slide width each):
+
+**Panel A — R₀ = 0.8 (sub-critical)**
+> **[PLACEHOLDER → `paper/figures/main_pareto_R0_0.8.png`]**
+> Caption: `Below threshold; all policies converge to ≈ 0 quickly.`
+
+**Panel B — R₀ = 3.0 (super-critical, mid)**
+> **[PLACEHOLDER → `paper/figures/main_pareto_R0_3.0.png`]**
+> Caption: `GNN advantage shrinks as the regime deepens.`
+
+**Panel C — R₀ = 6.0 (heavily endemic)**
+> **[PLACEHOLDER → `paper/figures/main_pareto_R0_6.0.png`]**
+> Caption: `Distance Threshold and Betweenness now match or beat GNN.`
+
+**Top banner**, full slide width, Inter 400, 20 pt, Paper:
+> **The picture flips with regime.** Cost-aware learning helps most where the disease is barely sustaining itself; brute-force structural cuts dominate when every path is overflowing.
+
+---
+
+## Slide 15 — Per-campus ranking
 
 **Speaker:** Ryan (~14 s)
 
-**Layout.** Same plot as Slide 13 transitions in place to a new R₀.
+**Layout.** A heatmap of policy rankings across campuses, plus a small AUC summary table to its right.
 
-The transition: title text morphs from `R₀ ≈ 1.5 — near the threshold` to `R₀ = 6.0 — heavily endemic`. The four curves smoothly interpolate to their R₀=6 shapes (we precompute the keyframes and tween them).
+**Center.**
 
-In the new state:
-- Distance Threshold (Mint) and Betweenness (Slate) sit visibly **below** GNN (Coral).
-- GNN no longer has its glow — the glow has migrated to Distance Threshold.
-- The 5% annotation now ranks Distance > Betweenness > GNN > Random.
+> **[PLACEHOLDER → `paper/figures/main_ranking_R0_1.5.png`]**
 
-A small overlay text in the upper-right of the plot, Coral 22 pt:
-> **The GNN is not always the answer.**
+Caption: `Ranking of policies (1 = best, 4 = worst) at each campus, R₀ = 1.5. GNN wins 5/5 at this regime.`
 
-This slide is the talk's intellectual pivot — the moment it goes from "look at our cool method" to "the cost-aware framing reorders everything." The visual trick (same plot, smooth tween, glow follows the winner) does the heavy lifting.
+**Right.** A compact 5×4 AUC table (rows = campus, cols = policy), values from `results/summary/auc_by_policy_campus.csv`. Coral cell highlight on the per-row max.
 
----
-
-## Slide 15 — Robustness in three rows
-
-**Speaker:** Ryan (~24 s)
-
-**Layout.** Three small horizontal panels stacked vertically. Each panel is a mini-plot, 20% slide height.
-
-**Row 1 — Compliance.**
-- Title left, Inter Tight 600, 22 pt: `Compliance`
-- Mini bar chart: GNN @ 60% compliance vs all four policies @ 100% compliance, side-by-side. GNN's reduced bar is **still taller** than the next-best.
-- Caption right, Mist 14 pt: `60% beats every other policy at 100%.`
-
-**Row 2 — SIR vs SIS.**
-- Title left: `SIR alternative`
-- Mini side-by-side Pareto frontiers — SIS on the left, SIR on the right. The same regime-split pattern is visible, but **sharper** in SIR.
-- Caption right: `Same regime split — sharper.`
-
-**Row 3 — Adversarial seeding.**
-- Title left: `Adversarial seeding`
-- Mini bar chart: GNN policy at R₀=6 wins both random and adversarial seeding (with an arrow pointing to the adversarial bar).
-- Caption right: `GNN takes both regimes when seeded at the eigenvector backbone.`
-
-The three rows are separated by 24 px gaps and a faint Slate hairline.
-
-**Build.** Each row fades in 250 ms after the previous. Total: ~1 s.
-
-**Easter egg.** The titles of the three rows form a vertical alignment that mirrors the spacing of the SIS/SIR/etc. panels in our paper's results figure — visual continuity between the talk and the paper for anyone who's read both.
+**Bottom caption**, Mist 14 pt:
+> AUC = area under the prevalence-vs-budget curve, lower is better (less infected per dollar spent).
 
 ---
 
-## Slide 16 — Architecture doesn't matter
-
-**Speaker:** Ryan (~10 s)
-
-**Layout.** Three nearly-identical bar charts side by side, each 30% slide width, with the same y-axis scale.
-
-- Bar 1: `GraphSAGE` — bar height 0.040
-- Bar 2: `GAT` — bar height 0.039
-- Bar 3: `GCN` — bar height 0.041
-
-All three bars are Coral. Y-axis labeled `prevalence reduction at 5% budget`, Mist 12 pt.
-
-Below the three plots, centered, Inter Tight 700, 32 pt, Paper:
-
-> **The framework is what matters,** not the message-passing operator.
-
-The word `framework` is underlined in Coral.
-
-A tiny Mist 14 pt footnote: `Cost-learning > architecture choice.`
-
-**Easter egg.** The three bar charts have identical axis labels but slightly different shades of Ink in their plot backgrounds (`#0B1020`, `#0C1122`, `#0A0F1E`). The variation is invisible to the human eye but it's a callback to "the architectures look identical because they basically are."
-
----
-
-## Slide 17 — Honest caveat
+## Slide 16 — Robustness: imperfect compliance
 
 **Speaker:** Ryan (~14 s)
 
-**Layout.** Almost-empty slide. Ink background. A single block-quote, vertically centered, in Paper 38 pt, italic, max width 60% slide:
+**Layout.** Single figure on the left, takeaway block on the right.
 
-> Facebook100 is a **friendship graph**, not a contact graph.
->
-> We're not solving COVID.
+**Left.**
 
-The two phrases `friendship graph` and `not a contact graph` are subtly underlined in Slate (not Coral — this is a quiet moment, not a punchline).
+> **[PLACEHOLDER → `paper/figures/robustness_compliance_R0_1.5.png`]**
 
-Below the quote, in Mist 18 pt:
+Caption, Mist 14 pt: `Steady-state prevalence vs budget, with 0% / 20% / 40% / 60% non-compliance. R₀ = 1.5.`
 
-> What we're showing is that **cost-aware framing** changes which policies look "best."
+**Right.** Title `IF EVERYONE ONLY HALF-LISTENS`, Inter Tight 700, 26 pt, Paper. Body, Inter 400, 20 pt:
 
-A single small Coral square sits at the bottom-center of the slide as a visual full-stop. Nothing else.
+> - Each "removed" edge is independently un-removed with probability `p` before simulation.
+> - GNN at **60% compliance** still beats every other policy at **100% compliance**, in the near-threshold regime.
+> - The cost-aware ranking is robust to the dominant real-world failure mode.
 
-**Easter egg.** The quote's typography uses real "smart quotes" (`"` `"`), proper em dashes (`—`), and slightly hung punctuation. The kind of typography care that academic slides rarely bother with. Subliminal: we sweat the details.
+**Bottom caption**, Mist 14 pt: `Setup follows Project Outline §4. Implementation in scripts/05_run_robustness.py.`
 
 ---
 
-## Slide 18 — Web app teaser
+## Slide 17 — Robustness: SIR + adversarial seeding
+
+**Speaker:** Ryan (~16 s)
+
+**Layout.** Two figures side by side, each with a one-sentence takeaway underneath.
+
+**Left panel — SIR.**
+
+> **[PLACEHOLDER → `paper/figures/robustness_sir_R0_1.5.png`]**
+
+Title above: `SIR model`, Inter Tight 700, 22 pt, Paper.
+Takeaway, Inter 400, 18 pt:
+> Same regime split as SIS, slightly sharper. The qualitative ranking is not an artifact of choosing SIS.
+
+**Right panel — Adversarial seeding.**
+
+> **[PLACEHOLDER → `paper/figures/robustness_adversarial_seed_R0_1.5.png`]**
+
+Title above: `Adversarial seeding`, Inter Tight 700, 22 pt, Paper.
+Takeaway, Inter 400, 18 pt:
+> Initial infections placed at the top eigenvector-component nodes (worst case). GNN policy now wins **both** regimes — including R₀ = 6 where it had been third under random seeding.
+
+**Bottom caption**, Mist 14 pt: `Reduced simulation budget on these panels (n_realizations = 20) is documented in WARNINGS.md.`
+
+---
+
+## Slide 18 — Ablation: GNN architecture
 
 **Speaker:** Ryan (~12 s)
 
-**Layout.** Mostly screenshot, framed.
+**Layout.** Single figure on the left, single sentence finding on the right.
 
-A high-res mock of the Streamlit app, taking 75% of the slide. The screenshot has:
-- A sidebar on the left with sliders (`R₀ = 1.5`, `Budget = 5%`, campus dropdown showing `Caltech36`).
-- A main panel showing an animated SIS curve and a small graph viz with greyed-out edges.
-- A small Pareto frontier in the bottom-right of the app.
+**Left.**
 
-A Coral arrow points to the campus selector with an annotation in JetBrains Mono 16 pt: `pick a campus`.
-A Coral arrow points to the budget slider: `dial the budget`.
-A Coral arrow points to the graph viz: `watch it spread`.
+> **[PLACEHOLDER → `paper/figures/ablation_gnn_arch_R0_3.0.png`]**
 
-In the upper-right corner of the slide, in JetBrains Mono 16 pt, Coral:
+Caption, Mist 14 pt: `Pareto frontiers for the GNN policy with three encoder choices, R₀ = 3.0. Curves are statistically indistinguishable.`
 
-> **DEMO →**
+**Right.** Title `THE FRAMEWORK, NOT THE OPERATOR`, Inter Tight 700, 28 pt, Paper. Body, Inter 400, 22 pt:
 
-Below the screenshot, centered, in Paper 22 pt:
-
-> Built with Streamlit. Runs locally on a laptop.
-
-**Build.** Static — no animation. The slide stays on screen long enough for Ryan to switch to the live demo.
-
-**Easter egg.** The screenshot's settings (`R₀ = 1.5`, `Budget = 5%`, `Caltech36`) match exactly the headline numbers from Slide 13. If anyone is paying attention, the demo will reproduce the headline result live.
+> GraphSAGE, GAT, and GCN produce the same downstream Pareto frontier (within bootstrap CI).
+>
+> What's load-bearing is the **end-to-end cost-learning pipeline** — link-prediction objective + spectral selector — not the message-passing operator. Architecture choice is largely arbitrary.
 
 ---
 
-## Slide 19 — Live demo (placeholder)
+## Slide 19 — Ablation: cost function
 
-**Speaker:** Ryan (~30 s if live, skipped if presenting in pre-recorded mode)
+**Speaker:** Ryan (~14 s)
 
-**Layout.** Single Coral panel covering 100% of the slide. Centered, Inter Tight 900, 200 pt, Ink:
+**Layout.** Single figure with annotations.
 
-> **LIVE**
+**Left.**
 
-That's it. It's a "we're switching applications now" interstitial. The presenter alt-tabs to Streamlit during this slide.
+> **[PLACEHOLDER → `paper/figures/ablation_cost_function_R0_3.0.png`]**
 
-If live demo is unavailable, this slide is skipped automatically (deck logic). The deck's chrome budget-bar at the bottom does NOT advance during this slide — it's a free interlude.
+Caption, Mist 14 pt: `Pareto frontiers under five cost functions: sigmoid_dot (primary), cosine, raw_dot, uniform, oracle_lognormal.`
+
+**Right.** Title `WHERE THE GNN ADVANTAGE COMES FROM`, Inter Tight 700, 24 pt, Paper. Body, Inter 400, 18 pt:
+
+> - `uniform` cost — every edge costs the same — shows what's left of each policy when cost is removed from the picture.
+> - `oracle_lognormal` — a cost with high dynamic range — the GNN advantage **widens**.
+> - `sigmoid_dot` (the primary) — the GNN advantage exists but is bounded by the narrow `[0.50, 0.73]` cost band documented in `WARNINGS.md`.
+> - **Implication:** the cost-aware framing depends on cost having meaningful variance. A dataset with richer features would amplify the result.
 
 ---
 
-## Slide 20 — Closing
+## Slide 20 — Cross-campus regression
+
+**Speaker:** Ryan (~12 s)
+
+**Layout.** Single figure with a short methods footnote.
+
+**Center.**
+
+> **[PLACEHOLDER → `paper/figures/cross_campus_regression.png`]**
+
+Caption, Mist 14 pt:
+> Pearson correlation between policy AUC and eight descriptive graph statistics, faceted by R₀ and policy. Five campuses; univariate per cell.
+
+**Bottom block.** Title `WHEN DOES THE GNN WIN?`, Inter Tight 700, 22 pt, Paper. Body, Inter 400, 18 pt:
+
+> - **Not enough campuses (n=5) to do honest multivariate inference** — a multivariate fit on 8 predictors is exactly determined.
+> - Univariate slopes still tell a directional story: GNN advantage **grows** with global clustering, **shrinks** with degree assortativity.
+> - Loading 10 more campuses would push n to 15 and unlock a 4-predictor multivariate fit. The Facebook100 loader supports it; only `data/processed/<name>.npz` caches need to be regenerated.
+
+> Optional swap: **[PLACEHOLDER → `paper/figures/ablation_synthetic_topology_R0_3.0.png`]** — Pareto under ER, BA, WS, configuration model, SBM topologies. Use if there's a question about "is this Facebook100-specific?"
+
+---
+
+## Slide 21 — Honest limitations
+
+**Speaker:** Ryan (~14 s)
+
+**Layout.** Two columns, each a short bulleted list. Single Coral closing line at the bottom.
+
+**Left — What we are not solving.**
+- **Friendship ≠ contact.** Facebook100 is a stable friendship graph; epidemics spread on transient contact graphs. Edge weights here are correlates of contact frequency, not contact frequency itself.
+- **SIS is a simplification.** Real respiratory pathogens have latency, age structure, behavior change.
+- **Cost is a proxy.** σ(⟨x, x⟩) is a stand-in for "social distance"; we don't claim it equals the dollar cost of a school closure.
+
+**Right — Where we cut corners.**
+- Reduced GNN encoder (TruncatedSVD pre-projection, hidden_dim=32, embed_dim=16, 40 epochs) for local-laptop tractability. Documented in `WARNINGS.md`. Full-fidelity Colab/A100 retraining script in `notebooks/01_colab_train_full_gnn.py`.
+- Sampled betweenness with `k=300` pivots on Penn94 / Tennessee95.
+- Three robustness/ablation panels run at `n_realizations = 20` instead of 50 (also in `WARNINGS.md`).
+
+**Bottom strip**, Coral 24 pt:
+> The contribution is the **framing** — that cost-awareness reorders policy rankings — not a deployable COVID intervention.
+
+---
+
+## Slide 22 — Web app teaser
+
+**Speaker:** Ryan (~12 s)
+
+**Layout.** Annotated screenshot of the Streamlit app.
+
+**Center.**
+
+> **[PLACEHOLDER → `presentation/assets/webapp_screenshot.png`]** — does not yet exist. Capture by running `uv run streamlit run webapp/app.py`, set `R₀ = 1.5`, `Budget = 5%`, `Caltech36`, GNN policy. Save the full-window PNG.
+
+Coral arrows with annotations point to:
+- **Sidebar controls** → "campus, R₀, budget, policy, cost function — all live."
+- **Animated SIS curve** → "per-step prevalence on the residual graph."
+- **Network panel** (pyvis) → "removed edges greyed out; nodes sized by infection probability."
+- **Pareto frontier** → "selected campus, all four policies, your current point marked."
+
+**Right sidebar — feature list**, Inter 400, 18 pt:
+> - Five campuses pre-loaded.
+> - Switch between SIS and SIR.
+> - Compare policies side-by-side in the comparison tab.
+> - Built with Streamlit + pyvis. Runs locally on a laptop. No GPU required for inference.
+
+**Bottom caption**, Mist 14 pt: `Source in webapp/app.py.`
+
+---
+
+## Slide 23 — Live demo (interstitial)
+
+**Speaker:** Ryan (~30 s if live, ≤ 4 s if skipped)
+
+**Layout.** Full-bleed Coral panel. Centered, Inter Tight 900, 200 pt, Ink:
+
+> **DEMO**
+
+Below in JetBrains Mono 24 pt, Ink: `→ webapp/app.py`
+
+That's it. The presenter alt-tabs to Streamlit during this slide and runs through one (campus × policy × budget) configuration end-to-end.
+
+If the live demo fails or gets skipped, this slide is on screen for under 4 seconds and the deck moves to Slide 24.
+
+---
+
+## Slide 24 — Closing
 
 **Speaker:** Ryan (~10 s)
 
-**Layout.** Mirror of the title slide, but inverted.
+**Layout.** Mirror of the title slide, simplified.
 
-- Pre-title, Coral, all caps, letter-spaced 0.18em: `THANK YOU`
-- Title, Paper, Inter Tight 900, 64 pt:
+**Content.**
+- Pre-title in Coral, all caps, letter-spaced 0.18em: `THANK YOU`
+- Title, Paper, Inter Tight 900, 56 pt:
   > Questions?
-- Below, Mist 22 pt:
-  > Code: `github.com/[handle]/stat175-project` *(or whatever URL we end up with)*
-  > Paper draft & figures: `paper/main.pdf` in the repo.
-- The same drifting graph from Slide 1, now visibly **thinner** (≈ 40% of original edges remain — the deck has been "cutting" edges for the entire talk).
+- Below, in Mist 22 pt:
+  > Code, paper draft, all figures: in the project repo.
+  > Reproduce the headline plot: `python scripts/04_run_pareto.py && python scripts/08_make_figures.py`.
+- Authors, Mist 18 pt, single line:
+  > Karlo Vrančić · Alec [Lastname] · Jackson [Lastname] · Ryan [Lastname]
+- Acknowledgement, Mist 14 pt:
+  > With thanks to Prof. Austern for the cost-function framing and the Track 1 latitude.
 
-The chrome budget-bar at the bottom is **fully filled**, and the slide-number tag reads `100% / 100%`.
-
-**Easter egg.** Below the URLs, in Mist 12 pt at 50% opacity: `Caltech 36 · Bowdoin 47 · Harvard 1 · Penn 94 · Tennessee 95`. Just the campus list, hung as a typographic flourish at the bottom of the closing slide.
+Background: the same rotating Caltech36 visualization from Slide 1, at 30% opacity. (Same render — no need to regenerate.)
 
 ---
 
-## Easter eggs index (for the curious)
+## Speaker handoff cheat-sheet
 
-A summary of the small touches scattered through the deck, in case the team wants to call attention to any during the Q&A.
-
-| # | Slide | Egg |
+| Slide | Speaker | Notes |
 |---|---|---|
-| 1 | All slides | Coral budget-bar fills left-to-right across the entire deck. |
-| 2 | All slides | Drifting graph in upper-right loses edges as the talk progresses. |
-| 3 | All slides | Slide numbers shown as `XX% / 100%`, not `n / 20`. |
-| 4 | All slides | Bottom-right speaker tag cycles names — no in-talk introductions needed. |
-| 5 | Slide 5 | A red dot accumulates in the `I` compartment every fifth cycle — endemic regime, visualized. |
-| 6 | Slide 6 | A coral pin marker on the phase-transition curve sits exactly where our headline R₀=1.5 result lives. |
-| 7 | Slide 7 | A second `0.53` cost example flashes briefly to anchor "cheap edge" without saying it. |
-| 8 | Slide 9 | All three vignettes share the same starting graph — visual A/B/C comparison without narration. |
-| 9 | Slide 10 | Animated Coral dots travel down the GraphSAGE arrow continuously — graph-message-passing as ambient motion. |
-| 10 | Slide 13 | GNN curve glow pulses at the same heartbeat (1.2 Hz) as the title slide. |
-| 11 | Slide 14 | The Coral glow migrates from GNN to Distance Threshold — winner gets the glow. |
-| 12 | Slide 16 | The three nearly-identical Ink shades behind the bars are a subliminal "they're basically the same." |
-| 13 | Slide 17 | Real smart quotes, em dashes, and hung punctuation — typographic care as a credibility signal. |
-| 14 | Slide 18 | The Streamlit screenshot's settings match Slide 13's headline numbers exactly. |
-| 15 | Slide 19 | Budget-bar pauses during the live demo — the talk's "cost" doesn't advance during exploration. |
-| 16 | Slide 20 | The drifting graph is visibly thinner than Slide 1 — the audience watched containment happen. |
+| 1-3 | **Karlo** | Title, motivation, formal problem. End on slide 3 with "Alec, take it from the math." |
+| 4-7 | **Alec** | Campuses, SIS, threshold, cost. End on slide 7 with "Jackson, what do we actually do with this?" |
+| 8-12 | **Jackson** | Four policies + GNN pipeline + novelty. End on slide 12 with "Ryan, results." |
+| 13-24 | **Ryan** | Headline + regime sweep + robustness + ablations + limitations + demo + close. |
+
+The bottom-right speaker tag updates per slide so the audience always knows who's talking.
 
 ---
 
-## Deck-level notes
+## Easter eggs (kept short and tasteful)
 
-- **Total slides:** 20 (19 if `LIVE` is skipped). Average dwell ≈ 15 seconds; Slide 13 (headline plot) and Slide 14 (regime flip) get ~22 seconds each. Several slides (2, 12, 19) are under 8 seconds.
-- **Color discipline:** every Coral element in the deck represents either *cost* or *the GNN's role*. Mint always means *contained / safe / community*. Slate is *baseline / classical*. Mist is *random / footnote / ambient*.
-- **No clip art, no stock images, no template chrome.** Everything custom.
-- **No bullet point lists.** Anywhere. If a slide feels like it needs bullet points, the slide isn't the right slide.
-- **Transcript is sovereign.** None of the slides repeat lines from `lightning-talk.md`. The slides anchor the audience visually while the speakers do the talking.
-- **Build implementation hint:** Keynote with custom typography or Reveal.js (`reveal.js`) would both implement this cleanly. Keynote has nicer slide-to-slide transitions out of the box; Reveal.js makes the budget-bar and animated chrome elements easier to script.
+A handful, not a parade:
+- **Slide 6** — the Coral pin marker on the phase-transition curve sits exactly at R₀ = 1.5, which is the headline regime on Slide 13. Quiet visual call-forward.
+- **Slide 8** — the GNN card has a Coral border; the others have Slate. Communicates "this is the novel one" without saying it.
+- **Slide 13** — the Coral GNN curve has a soft glow. **Slide 14**, panel C — the glow has migrated to the Distance Threshold curve. The winner gets the glow.
+- **Slide 22** — the Streamlit screenshot's settings (`R₀ = 1.5`, `Budget = 5%`, `Caltech36`) match Slide 13's headline numbers exactly. The live demo on Slide 23 will reproduce the headline result if Ryan starts from those defaults.
+- **Slide 1 and Slide 24** — the rotating Caltech36 background is the same render. The deck "loops back" visually.
+
+---
+
+## Implementation notes
+
+- **Tooling.** Either Keynote with custom typography, or Reveal.js with a custom theme. Both can render the chrome (speaker tag, slide number) globally and the figure placeholders as `<img>`/`<image>` tags pointing to `paper/figures/...`.
+- **Build order.** Generate the deck **after** running `scripts/08_make_figures.py` so all figures are fresh. Then capture the webapp screenshot for Slide 22.
+- **No re-rendering of figures inside the deck.** Every numerical plot uses the existing PNG from `paper/figures/`. Decoupling the deck from the data pipeline keeps the figures consistent with the paper.
+- **Numerical values.** All headline numbers cited in the deck are present in `results/summary/headline_numbers.json`. Re-pull from there if any value needs updating.
