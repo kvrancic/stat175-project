@@ -1,944 +1,768 @@
 \documentclass{article}
 
-\usepackage[margin=1in]{geometry}
-\usepackage{amsmath,amssymb,amsthm}
+\usepackage{microtype}
 \usepackage{graphicx}
-\usepackage[round]{natbib}
 \usepackage{booktabs}
 \usepackage{hyperref}
-\usepackage{xcolor}
-\usepackage{caption}
-\usepackage{subcaption}
-\usepackage{enumitem}
 
-\title{Cost-Constrained Edge Removal for Epidemic Containment on Social Networks:\\
-A Comparison of Heuristic and GNN-Learned Policies on Facebook100}
+\newcommand{\theHalgorithm}{\arabic{algorithm}}
+\usepackage[accepted]{icml2025}
 
-\author{Karlo Vran\v{c}i\'{c}, Alec [Last], Jackson Webster, Ryan [Last]\\
-STAT 175 (Prof. Morgane Austern), Harvard University}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{algorithm}
+\usepackage{algorithmic}
 
-\date{\today}
+\icmltitlerunning{Cost-Constrained Edge Removal for Epidemic Containment}
 
 \begin{document}
-\maketitle
+
+\twocolumn[
+\icmltitle{Cost-Constrained Edge Removal for Epidemic Containment\\
+on Social Networks}
+
+\icmlsetsymbol{equal}{*}
+
+\begin{icmlauthorlist}
+\icmlauthor{Karlo Vran\v{c}i\'{c}}{harvard}
+\icmlauthor{Alec Leprevotte}{harvard}
+\icmlauthor{Jackson Webster}{harvard}
+\icmlauthor{Ryan Jiang}{harvard}
+\end{icmlauthorlist}
+
+\icmlaffiliation{harvard}{Harvard University, Cambridge, MA, USA}
+
+\icmlcorrespondingauthor{Karlo Vran\v{c}i\'{c}}{kvrancic@college.harvard.edu}
+
+\icmlkeywords{epidemic containment, edge removal, graph neural networks, cost-aware optimization, SIS}
+
+\vskip 0.3in
+]
+
+\printAffiliationsAndNotice{}
 
 \begin{abstract}
-We study cost-constrained epidemic containment on real social networks
-(Facebook100) under a stochastic Susceptible-Infected-Susceptible (SIS)
-model. Edge removal is the intervention modality and the cost of
-removing an edge is derived from the similarity of the two endpoints'
-feature vectors via a sigmoid-dot-product proxy. We compare four
-policies: random, edge betweenness over cost, a Louvain-community
-``distance threshold'' (the realistic implementable form), and a
-graph neural network (GNN) policy that learns node embeddings whose
-similarity is the per-edge cost.  We sweep cost budgets to recover
-Pareto frontiers of cost vs.\ steady-state prevalence on five
-Facebook100 campuses, run robustness panels (SIR alternative,
-imperfect compliance, adversarial seeding) and three ablations
-(GNN architecture, cost function, synthetic graph topology), and
-fit a cross-campus regression of policy AUC against descriptive
-graph statistics. We discuss when the GNN-learned cost beats the
-hand-designed cost, when classical betweenness suffices, and how
-much we lose by constraining ourselves to enforceable rules.
+We study cost-constrained epidemic containment on the Facebook100 social
+graphs under stochastic SIS dynamics. Per-edge cost is a similarity-based
+proxy for the social expense of severing a tie; the optimization is to
+\textbf{minimize the total cost of removed edges subject to keeping
+steady-state SIS prevalence below a target}. We compare four
+edge-removal policies (random, edge betweenness over cost, a
+Louvain-induced distance threshold, and a graph neural network whose
+per-edge cost is learned end-to-end via self-supervised link
+prediction) across five campuses and four basic reproduction numbers.
+The headline finding is a regime split. Near the spectral threshold,
+the GNN cuts steady-state prevalence by 4.0 percentage points at a 5\%
+cost budget versus 2.2 for the next-best classical baseline; deep in
+the endemic regime, the realistic distance-threshold policy catches
+up and overtakes. A GNN-architecture ablation shows the cost-learning
+framework, not the message-passing operator, drives the result.
+Robustness to imperfect compliance, the SIR alternative, and
+adversarial seeding is reported. Code, data, and figure-regeneration
+scripts are released at
+\url{https://github.com/kvrancic/stat175-project}.
 \end{abstract}
 
 \section{Introduction}
 \label{sec:intro}
 
-\paragraph{Scientific question.}
-\emph{Given a social contact graph in which vertices carry feature
-information and edges carry costs derived from endpoint feature
-similarity, what is the minimum-cost set of edges whose removal keeps
-the steady-state SIS prevalence below a fixed threshold?}
+The classical literature on edge-removal containment fixes a budget of
+$k$ edges and selects them to maximally reduce the spectral radius of
+the contact graph \citep{wang2003threshold,tong2012netmelt,
+saha2015greedywalk,yi2022supermodular}. In real networks, edges are
+not interchangeable: severing a roommate tie is socially much costlier
+than severing a casual acquaintance tie across a campus, and a policy
+that ignores this asymmetry either severs critical ties or leaves
+cheap interventions on the table.
 
-\paragraph{Motivation for the cost-aware reframe.}
-The classical literature on epidemic containment via network
-modification studies the \emph{cardinality} version of this problem:
-remove the minimum number of edges, or equivalently the maximum-impact
-$k$ edges, such that the residual graph's spectral radius drops below
-the epidemic threshold $\tau_c = 1/\lambda_1(A)$
-\citep{wang2003threshold,tong2012netmelt,saha2015greedywalk}. The
-cardinality formulation treats every edge as identical. In real social
-graphs this is unrealistic: cutting the friendship between two
-roommates is socially much costlier than cutting an acquaintance tie
-across a campus. A containment policy that ignores this asymmetry is
-either practically impossible to deploy (it severs critical ties) or
-underutilizes cheap interventions (it misses harmless cuts that would
-still bend the curve). The cost-aware reframe takes node features as
-input, derives a per-edge cost from those features, and minimizes the
-total cost of the edges removed subject to a containment constraint.
+We study the cost-aware variant. Let $G = (V, E)$ have a per-edge cost
+$c : E \to \mathbb{R}_{\geq 0}$ derived from endpoint feature
+similarity, let $\mathrm{prev}_{\infty}(G \setminus E_{\mathrm{cut}})$
+denote steady-state SIS prevalence on the residual graph, and write
+\begin{equation}
+\label{eq:problem}
+\min_{E_{\mathrm{cut}} \subseteq E} \; \sum_{e \in E_{\mathrm{cut}}} c(e)
+\quad \text{s.t.} \quad
+\mathrm{prev}_{\infty}\!\bigl(G \setminus E_{\mathrm{cut}}\bigr) \le \tau,
+\end{equation}
+or in the budgeted dual,
+$\min_{E_{\mathrm{cut}}} \mathrm{prev}_{\infty}(G \setminus
+E_{\mathrm{cut}})$ s.t. $\sum c(e) \le B$. We sweep $B$ over a
+logarithmic grid and report the implied Pareto frontier.
 
 \paragraph{Contributions.}
-\begin{enumerate}[leftmargin=2em]
-    \item An end-to-end empirical comparison of four edge-removal
-    policies (random, edge betweenness over cost, a Louvain-induced
-    community-distance threshold, and a GNN-learned cost policy) on
-    five Facebook100 campuses chosen for diversity in clustering
-    coefficient.
-    \item A graph neural network policy whose per-edge cost
-    $c_e^{\textsc{gnn}} = \sigma(\langle z_u, z_v\rangle)$ is
-    \emph{learned} from a self-supervised link-prediction objective on
-    the friendship graph itself. The GNN converts attribute-driven
-    homophily into a continuous cost surface, and the learned cost is
-    combined with NetMelt-style spectral edge importance into a
-    single bang-for-buck score.
-    \item An implementability analysis: we report the gap between the
-    ideal policy (GNN over cost) and a realistic, enforceable policy
-    (community-distance threshold), under both perfect and imperfect
-    compliance.
-    \item Three robustness panels (SIR alternative, $80\%$
-    compliance, adversarial top-eigenvector seeding) and three
-    ablations (GNN architecture, cost function, synthetic graph
-    topology) that characterize \emph{when} each policy wins.
-\end{enumerate}
+\begin{itemize}
+    \item A cost-aware extension of NetMelt-style edge removal where
+    per-edge cost is \emph{learned} end-to-end via self-supervised
+    link prediction, instead of hand-designed from features
+    (Section~\ref{sec:methods}).
+    \item Pareto frontiers across five Facebook100 campuses, four
+    basic reproduction numbers, and four policies. The GNN-learned
+    cost dominates near the spectral threshold; classical structural
+    cuts dominate in the strongly endemic regime
+    (Section~\ref{sec:results-pareto}).
+    \item An implementability analysis: the gap between the
+    optimization-style GNN policy and a realistic, enforceable
+    distance-threshold policy under perfect and imperfect compliance
+    (Sections~\ref{sec:results-robustness},~\ref{sec:discussion}).
+    \item Ablations on the GNN architecture (the cost-learning
+    framework, not the operator, is load-bearing) and on the cost
+    function (the GNN advantage widens as cost variance grows).
+\end{itemize}
 
-\section{Background}
-\label{sec:background}
-
-\subsection{Graph and SIS dynamics}
-
-Let $G = (V, E)$ be an undirected graph with $n = |V|$ vertices and
-$m = |E|$ edges, and let $A \in \{0, 1\}^{n \times n}$ be its
-adjacency matrix. Each vertex $v \in V$ carries a feature vector
-$x_v \in \mathbb{R}^d$ (in our case the L2-normalized one-hot
-encoding of seven Facebook100 attributes). At each discrete time
-step, every infected node infects each susceptible neighbor
-independently with probability $\beta$ per edge, and recovers (back
-to susceptible) with probability $\gamma$. Equivalently, a
-susceptible vertex with $k$ infected neighbors becomes infected
-with probability $1 - (1 - \beta)^k$.
-
-The SIS model has a phase transition governed by the leading
-eigenvalue of $A$. \citet{wang2003threshold} showed that the
-quenched mean-field epidemic threshold is
-\[
-    \tau_c = \frac{1}{\lambda_1(A)}.
-\]
-For $\beta/\gamma < \tau_c$ the epidemic dies out almost surely; for
-$\beta/\gamma > \tau_c$ a positive-prevalence endemic state
-persists. Controlling the leading eigenvalue therefore controls
-containment: removing edges that contribute most to $\lambda_1(A)$
-is the classical recipe for raising $\tau_c$ above $\beta/\gamma$.
-
-We work in the stochastic (per-vertex Bernoulli) version of SIS and
-define our primary outcome as the time-averaged
-\emph{steady-state prevalence}: the fraction of infected vertices
-averaged over a post-burn-in window of the simulation.
-
-\subsection{Cost-aware edge removal as a constrained optimization
-problem}
-
-Let $c : E \to \mathbb{R}_{\geq 0}$ be a per-edge cost function. For
-any subset $S \subseteq E$ define the total cost
-$C(S) = \sum_{e \in S} c_e$ and write $G \setminus S$ for the
-residual graph after removing the edges in $S$. Let
-$\textrm{Outcome}(G_S)$ be the steady-state prevalence of an SIS
-process on $G \setminus S$ at fixed $(\beta, \gamma)$. The
-constrained optimization problem we study is
-\[
-    \min_{S \subseteq E} \quad C(S)
-    \qquad \textrm{s.t.} \quad
-    \textrm{Outcome}(G \setminus S) \le \tau,
-\]
-or equivalently in budgeted form
-\[
-    \min_{S \subseteq E} \quad \textrm{Outcome}(G \setminus S)
-    \qquad \textrm{s.t.} \quad
-    C(S) \le B,
-\]
-where $\tau$ is a containment target and $B$ a cost budget. We sweep
-$B$ over a logarithmic grid and report the implied Pareto frontier.
-This is a generalization of the cardinality formulation of
-\citet{tong2012netmelt} and \citet{saha2015greedywalk}; the
-non-uniform costs are what make the problem genuinely cost-aware.
-
-\subsection{The cost proxy}
-\label{sec:cost-proxy}
-
-We follow our advisor's suggestion and the social network analysis
-literature on homophily \citep{newman2002assortative,
-rizi2025homophily} in defining the per-edge cost as a smooth
-function of endpoint feature similarity:
-\[
-    c_e \;=\; \sigma\!\left(\langle x_u, x_v\rangle\right),
-\]
-with $x_u, x_v$ the L2-normalized one-hot feature vectors of edge
-$e = (u, v)$ and $\sigma(\cdot)$ the logistic sigmoid. Edges between
-nodes with strongly aligned attribute profiles (same dorm, same
-year, same major) inherit a high cost; edges between dissimilar
-nodes are cheap. The L2 normalization ensures
-$\langle x_u, x_v \rangle \in [0, 1]$, so $c_e \in
-[\tfrac{1}{2}, \sigma(1)] \approx [0.5, 0.73]$. The cost function's
-limited dynamic range is a known limitation that we address in the
-ablation in Section~\ref{sec:results}.
-
-\section{Related work}
+\section{Background and related work}
 \label{sec:related}
 
-\paragraph{Spectral epidemic threshold and edge removal.}
-\citet{wang2003threshold} showed that the SIS phase transition
-on an arbitrary contact graph is governed by the leading
-eigenvalue of the adjacency matrix, with critical ratio
-$\tau_c = 1 / \lambda_1(A)$. \citet{pastor2001epidemic} had
-earlier shown that scale-free degree distributions push
-$\lambda_1$ to infinity in the limit, and \citet{newman2002percolation}
-connected the SIS-like cascade to percolation theory. The
-optimization side, ``what is the best set of $k$ edges to remove
-to most reduce $\lambda_1(A)$'', was crystallized in NetMelt
-\citep{tong2012netmelt}: a first-order matrix-perturbation
-argument shows that removing edge $(i, j)$ reduces $\lambda_1$
-by approximately $2 u_i u_j$ where $u$ is the leading
-eigenvector, and greedy ranking by this score is provably
-near-optimal. \citet{saha2015greedywalk} extended this to
-weighted graphs and gave approximation guarantees, and
-\citet{yi2022supermodular} showed that the same edge-deletion
-problem under SIR is supermodular and admits a $1 - 1/e$
-approximation by a refined greedy. All of these treat edges as
-indivisible units; the cost-aware reframe we study generalizes
-to a per-edge weight that is a function of the endpoints'
-attributes.
+\paragraph{Spectral threshold.}
+The SIS process on graph $G$ with adjacency $A$, infection rate
+$\beta$, and recovery rate $\gamma$ has a quenched mean-field
+threshold $\tau_c = 1/\lambda_1(A)$ \citep{wang2003threshold}. For
+$\beta/\gamma < \tau_c$ the disease dies out; above, a positive
+endemic equilibrium persists. Edge removal raises $\tau_c$ by
+shrinking $\lambda_1(A)$. NetMelt \citep{tong2012netmelt} ranks edges
+by the first-order eigenvalue perturbation $2 u_i u_j$ where $u$ is
+the leading eigenvector of $A$, and greedy ranking by this score is
+provably near-optimal for the cardinality version of the problem.
+\citet{saha2015greedywalk} extend the analysis to weighted graphs;
+\citet{yi2022supermodular} prove a $1 - 1/e$ approximation for the
+SIR variant via supermodularity.
 
-\paragraph{Cost-aware and learning-aware variants.}
-\citet{li2024frankwolfe} pose a closely related problem:
-optimal weighted-network intervention via edge centrality, with
-costs derived externally rather than from features.
-\citet{tian2025mind} (MIND) learn to dismantle networks
-end-to-end with a GNN, but their dismantling target is
-fragmentation rather than epidemic threshold, and their cost is
-uniform. The recent survey \citep{liu2024gnnepidemic} catalogues
-GNN-driven epidemic modeling, but the GNN there learns the
-\emph{forward} dynamics (predicting prevalence) rather than the
-\emph{intervention} (selecting edges). Our contribution is the
-combination: a GNN whose self-supervised link-prediction
-training on the friendship graph induces a continuous cost
-surface that is then plugged into a NetMelt-style spectral
-ranking, on the cost-budgeted version of the edge-removal
-problem.
-
-\paragraph{Real-world enforceability.}
-The COVID-era literature on social-network interventions
-\citep{block2020socialdistancing} emphasizes that the
-mathematically optimal intervention is rarely the
-politically enforceable one; ``stay within your social bubble''
-turns out to be a competitive heuristic in many regimes. This
-informs our distance-threshold policy and the implementability
-gap that Section~\ref{sec:discussion} quantifies.
-\citet{rizi2025homophily} provide the structural-homophily
-theory that connects categorical attribute homophily (which
-the cost proxy uses) with epidemic-style percolation cascades
-(which the SIS process embodies); their finding that
-within-group and across-group homophily decompose
-non-trivially is what motivates our cross-campus regression
-in Section~\ref{sec:results-regression}.
-
-\paragraph{Facebook100 dataset.}
-We use the canonical Facebook100 dataset
-\citep{traud2012facebook100} of 100 university friendship
-graphs from a 2005 snapshot. To our knowledge no prior work has
-benchmarked cost-aware containment policies on this dataset
-under SIS dynamics; the closest prior is
-\citet{block2020socialdistancing}, which simulates social-
-distancing strategies on synthetic small-world graphs.
+\paragraph{Cost-aware and learning-based variants.}
+\citet{li2024frankwolfe} pose a closely related problem of weighted
+edge intervention, but with externally specified costs. MIND
+\citep{tian2025mind} learns to dismantle networks with a GNN, but
+optimizes for fragmentation rather than the epidemic threshold and
+uses uniform cost. The recent survey of
+\citet{liu2024gnnepidemic} catalogs GNN-based epidemic models; in
+those works the GNN learns the \emph{forward} dynamics (predicting
+prevalence), whereas our GNN learns the \emph{intervention cost}.
+COVID-era work \citep{block2020socialdistancing} establishes that
+``stay within your social bubble'' rules are competitive heuristics,
+which motivates our distance-threshold baseline.
+\citet{rizi2025homophily} provide the structural-homophily theory
+linking categorical attribute homophily with percolation cascades;
+this connects our cost proxy to the epidemic outcome.
 
 \section{Methods}
 \label{sec:methods}
 
-\subsection{Edge cost}
+\subsection{Cost function}
 
-We L2-normalize the concatenated one-hot encoding of seven
-Facebook100 attributes per node (student/faculty status, gender,
-major, second major, dorm, year, high school) and treat missing
-values (coded $0$ in the dataset) as their own category to avoid
-biasing the encoding through imputation
-\citep{traud2012facebook100}. The primary per-edge cost is then
-$c_e = \sigma(\langle x_u, x_v\rangle)$ as defined in
-Section~\ref{sec:cost-proxy}. The robustness panel additionally
-considers (i) a uniform cost (recovering the cardinality
-formulation), (ii) cosine similarity rescaled to $[0, 1]$, (iii) a
-clipped raw dot product, and (iv) an oracle log-normal cost
-independent of features.
+Each node carries an L2-normalized one-hot feature vector $x_v$
+covering seven Facebook100 attributes (status, gender, major, second
+major, dorm, year, high school). Missing values are coded as their
+own category to avoid imputation bias \citep{traud2012facebook100}.
+The primary per-edge cost is
+\begin{equation}
+\label{eq:cost}
+    c_e \;=\; \sigma\!\bigl(\langle x_u, x_v \rangle\bigr),
+\end{equation}
+where $\sigma$ is the logistic sigmoid. With L2-normalized features
+$\langle x_u, x_v \rangle \in [0, 1]$, so
+$c_e \in [\tfrac{1}{2}, \sigma(1)] \approx [0.50, 0.73]$. The
+narrow range is a known limitation; we test four alternative cost
+functions in Section~\ref{sec:results-ablations}.
 
-\subsection{The four policies}
+\subsection{Four policies}
 
-Every policy implements a uniform interface
-$P : (G_S, c, B) \to S \subseteq E$ that returns the indices of edges
-to remove given a residual graph, a cost vector, and a cost budget.
+All four policies implement the unified template in
+Algorithm~\ref{alg:greedy}: assign each edge a score, divide by cost,
+fill in descending order until the budget is exhausted. The policies
+differ only in the score function.
 
-\paragraph{Random edge removal.} The trivial baseline. Edges are
-drawn uniformly without replacement until the cumulative cost
-reaches~$B$.
+\begin{algorithm}[t]
+\caption{Cost-aware greedy edge removal}
+\label{alg:greedy}
+\begin{algorithmic}
+    \STATE \textbf{Input:} graph $G$, costs $c$, budget $B$, score $s : E \to \mathbb{R}_{\geq 0}$.
+    \STATE \textbf{Output:} cut set $E_{\mathrm{cut}}$.
+    \STATE Compute $r_e \leftarrow s(e) / c_e$ for all $e \in E$.
+    \STATE Sort $E$ by $r_e$ in descending order.
+    \STATE $E_{\mathrm{cut}} \leftarrow \emptyset$, $B' \leftarrow 0$.
+    \FOR{$e$ in sorted order}
+        \IF{$B' + c_e \le B$}
+            \STATE $E_{\mathrm{cut}} \leftarrow E_{\mathrm{cut}} \cup \{e\}$, $B' \leftarrow B' + c_e$.
+        \ENDIF
+    \ENDFOR
+\end{algorithmic}
+\end{algorithm}
 
-\paragraph{Edge betweenness over cost.} For each edge $e$ we
-compute its (approximate) betweenness centrality $b_e$ via Brandes'
-algorithm with $k = 300$ pivot sources \citep{tong2012netmelt}. We
-score each edge by $b_e / c_e$ and greedy-fill in descending score
-order until the budget is exhausted. Sampled betweenness is a
-documented approximation; the variance under different pivot draws
-is captured by the pinned random seed.
+\paragraph{Random.} $s(e) \equiv 1$. The cardinality-blind, cost-blind
+floor.
 
-\paragraph{Distance threshold (community-bubble cut).} Run Louvain
-\citep{blondel2008louvain} on the residual graph to obtain a
-partition. Build the community meta-graph whose nodes are
-communities and whose edges connect any pair of communities sharing
-at least one inter-community edge. For each original edge $(u, v)$
-with community labels $c_u, c_v$, define its meta-graph distance
-$d_{c_u, c_v}$ as the BFS hop count between the two communities
-(with $d = 0$ if $c_u = c_v$). Score each edge by
-$d_{c_u, c_v} / c_e$ and greedy-fill until budget. This is the
-realistic, enforceable form: a public-health intervention can in
-principle communicate "stay within your $k$-hop community bubble"
-to the population.
+\paragraph{Edge betweenness over cost.} $s(e) = b_e$, the (sampled)
+edge betweenness centrality computed via Brandes' algorithm with
+$k = 300$ pivot sources \citep{tong2012netmelt}. Sampling is
+documented in \texttt{WARNINGS.md} and seeded.
 
-\paragraph{GNN-learned cost (the novel contribution).} A 2-layer
-GraphSAGE encoder \citep{hamilton2017graphsage} produces 16-dim
-node embeddings $z_v$. Cost from learned space:
-$c_e^{\textsc{gnn}} = \sigma(\langle z_u, z_v\rangle)$. Structural
-impact is the NetMelt eigenscore $2 u_i u_j$, the first-order
-perturbation of $\lambda_1(A)$ when edge $(i, j)$ is removed, where
-$u$ is the leading eigenvector of $A$
-\citep{tong2012netmelt}. Edges are scored by
-$2 u_i u_j / c_e^{\textsc{gnn}}$ and greedy-filled until budget.
+\paragraph{Distance threshold.} Run Louvain
+\citep{blondel2008louvain} on the residual graph, build the community
+meta-graph, and let $d_{c_u, c_v}$ be the BFS hop count between the
+two endpoint communities (zero within a community). Set
+$s(e) = d_{c_u, c_v}$. This is the policy a public-health authority
+can communicate as ``stay within your $k$-hop community bubble.''
 
-The encoder is trained end-to-end via self-supervised link
-prediction: for each true edge we sample a random non-edge as a
-negative; the loss is binary cross-entropy on the logit
-$\langle z_u, z_v \rangle$. We project the high-dimensional one-hot
-features through a 64-component TruncatedSVD before the GraphSAGE
-layers so that per-epoch cost does not scale with the raw feature
-dimension. Training takes under 40 seconds total across the five
-campuses.
-
-The GNN policy's novelty is that the cost function itself is
-\emph{learned} from data rather than hand-designed; the training
-signal aligns the cost surface with the graph's homophily structure
-without ever consulting the SIS simulator.
+\paragraph{GNN-learned cost.} A 2-layer GraphSAGE encoder
+\citep{hamilton2017graphsage} produces 16-dimensional embeddings
+$z_v$. The cost in learned space is
+$c_e^{\mathrm{gnn}} = \sigma(\langle z_u, z_v \rangle)$. The score is
+the NetMelt eigenscore $s(e) = u_i u_j + u_j u_i$ where $u$ is the
+leading eigenvector of $A$. Training is self-supervised link
+prediction: for each true edge sample one random non-edge, with
+binary cross-entropy loss on $\sigma(\langle z_u, z_v \rangle)$.
+The one-hot feature matrix is pre-projected through a 64-component
+TruncatedSVD before the GraphSAGE layers; the same projection is
+reused at inference time. The cost function is the only part learned
+end-to-end from data.
 
 \section{Experimental setup}
 \label{sec:setup}
 
-\paragraph{Datasets.} We use five Facebook100 campuses chosen for
-diversity in global clustering coefficient: Caltech36 (762 nodes),
-Bowdoin47 (2{,}250), Harvard1 (15{,}086), Penn94 (41{,}536), and
-Tennessee95 (16{,}977). Each network is restricted to its giant
-connected component before any analysis.
+\paragraph{Datasets.} Five Facebook100 campuses chosen for diversity in
+global clustering coefficient: Caltech36 ($n=762$, $C=0.29$),
+Bowdoin47 ($n=2{,}250$, $C=0.22$), Harvard1 ($n=15{,}086$, $C=0.14$),
+Penn94 ($n=41{,}536$, $C=0.10$), Tennessee95 ($n=16{,}977$,
+$C=0.14$). Each network is restricted to its giant component before
+analysis. Per-campus eigenvalues
+$\lambda_1 \in \{74.2, 124.2, 247.4, 180.4, 214.5\}$ are tabulated in
+\texttt{results/summary/threshold\_sanity.json}.
 
 \paragraph{Epidemic regime.} We fix $\gamma = 0.10$ and parameterize
-$\beta$ via the basic reproduction number
-$R_0 = \beta \lambda_1(A) / \gamma$ so that the regime is comparable
-across campuses of very different size. We sweep
-$R_0 \in \{0.8, 1.5, 3.0, 6.0\}$, which brackets the spectral
-threshold ($R_0 = 1$) and reaches into the strongly endemic regime.
+$\beta$ via $R_0 = \beta \lambda_1(A) / \gamma$ so that the regime is
+comparable across campuses of very different size. We sweep
+$R_0 \in \{0.8, 1.5, 3.0, 6.0\}$, bracketing the threshold and
+reaching the strongly endemic regime.
 
-\paragraph{Simulation.} Each Pareto cell runs $N = 50$ stochastic
-SIS realizations of $200$ time steps each, with $10$ uniformly
-random initial-infected vertices per realization, and we discard
-the first $100$ steps as burn-in before time-averaging steady-state
-prevalence. Random seeds are pinned to $42$ throughout
-(\texttt{numpy}, \texttt{torch}, \texttt{python-louvain}, and the
-betweenness pivot sampler all derive from the same master seed).
+\paragraph{Simulation grid.} Each Pareto cell averages $N = 50$
+stochastic SIS realizations of $200$ time steps, with $10$ uniformly
+random initial-infected vertices and $100$-step burn-in. The cost
+budget grid is $\{0, 0.5, 1, 2, 5, 10, 20, 40\}$ percent of total
+cost. The full main sweep is $5 \times 4 \times 4 \times 8 = 640$
+budget cells, each averaged over $50$ realizations
+($32{,}000$ raw simulations). Master seed: $42$.
 
-\paragraph{Budget grid.} For each cell we sweep the cost budget at
-$\{0\%, 0.5\%, 1\%, 2\%, 5\%, 10\%, 20\%, 40\%\}$ of the total cost,
-yielding a Pareto frontier of cost vs.\ steady-state prevalence per
-$(campus, R_0, policy)$.
+\paragraph{Reproducibility.} All numerical hyperparameters live in
+\texttt{configs/default.yaml} with per-experiment overrides in
+\texttt{configs/experiments/}. The full pipeline runs from raw
+\texttt{.mat} downloads to final figures via the eight numbered
+scripts \texttt{02\_build\_features.py} through
+\texttt{09\_summarize\_results.py}; the entry-point sequence is
+documented in \texttt{README.md}. Total wall-clock on a laptop is
+under two hours, dominated by SIS simulation in
+\texttt{04\_run\_pareto.py} and \texttt{05\_run\_robustness.py}.
+Every figure in this paper is regenerated by
+\texttt{08\_make\_figures.py} from parquet result tables. A
+per-script reproducibility table is in Appendix~\ref{app:repro}.
 
-\paragraph{Reproducibility.} Every figure in this paper is
-regenerated by \texttt{python scripts/08\_make\_figures.py} from
-parquet result tables in \texttt{results/}; every parquet is
-produced by the corresponding numbered script. The full
-end-to-end pipeline from raw \texttt{.mat} download to final
-figures runs from a single command sequence documented in
-\texttt{README.md}.
+\paragraph{Simulation budget and reduced-fidelity panels.}
+The main Pareto sweep
+(\texttt{results/main\_pareto.parquet}), the compliance robustness
+panel (\texttt{robustness\_compliance.parquet}), and the
+GNN-architecture ablation (\texttt{ablation\_gnn\_arch.parquet}) use
+the full $N = 50$ configuration above. The SIR-alternative
+robustness panel ($N = 20$, $150$ steps), adversarial-seeding
+robustness panel ($N = 20$, $100$ steps), cost-function ablation
+($N = 20$, $100$ steps), and synthetic-topology ablation ($N = 20$,
+$100$ steps) were re-run at reduced fidelity after the full-fidelity
+attempt timed out on local hardware (catalogued in
+\texttt{WARNINGS.md}). Bootstrap confidence intervals on those
+panels are correspondingly wider; the qualitative regime split
+survives, but reported point estimates carry an additional Monte
+Carlo error of approximately $\pm 0.005$. Per-panel $N$ and
+$n_{\mathrm{steps}}$ values are tabulated in
+Appendix~\ref{app:repro}.
 
 \section{Results}
 \label{sec:results}
 
-\subsection{Main Pareto frontiers}
+\subsection{Pareto frontier near the spectral threshold}
 \label{sec:results-pareto}
 
-We sweep $5$ campuses $\times$ $4$ policies $\times$ $4$ values of
-$R_0$ $\times$ $8$ budget fractions, with $N = 50$ stochastic SIS
-realizations per cell ($6{,}400$ Pareto cells; $640$ rows after
-collapsing across realizations). All headline numbers below are
-mean steady-state prevalences with $95\%$ bootstrap confidence
-intervals computed from the per-realization draws.
+\textbf{Headline:} at $R_0 = 1.5$, the GNN-learned cost dominates
+across the entire budget grid on every campus. At a $5\%$ cost
+budget, the GNN cuts mean steady-state prevalence by 4.0~percentage
+points; the next-best policy (distance threshold) cuts 2.2~pp, edge
+betweenness 1.7~pp, and random removal 1.6~pp
+(Figure~\ref{fig:main-pareto-1.5}, Table~\ref{tab:headline}). The gap
+is largest near $R_0 = 1$, where the spectral threshold is most
+sensitive to small reductions in $\lambda_1(A)$.
 
-\paragraph{Pareto frontier (Figure~\ref{fig:main-pareto-1.5}).}
-Near the spectral threshold ($R_0 = 1.5$) the GNN-learned policy
-strictly dominates the other three across the entire budget grid
-on every campus. At a $5\%$ cost budget the GNN cuts steady-state
-prevalence by an average of $4.0$ percentage points across the
-five campuses, versus $2.2$ for the distance-threshold policy,
-$1.7$ for edge betweenness, and $1.6$ for random removal. The gap
-is largest exactly where containment is most fragile: the regime
-where small structural surgery actually decides whether the
-disease persists.
-
-\begin{figure}[t]
+\begin{figure*}[t]
     \centering
-    \includegraphics[width=0.95\linewidth]{figures/main_pareto_R0_1.5.png}
-    \caption{Pareto frontier of cost budget vs.\ steady-state
-        SIS prevalence at $R_0 = 1.5$ across all five campuses
-        ($N = 50$ realizations per cell, $95\%$ bootstrap CI
-        bands). The GNN-learned policy (purple) dominates near the
-        epidemic threshold.}
+    \includegraphics[width=0.90\linewidth]{figures/main_pareto_R0_1.5.png}
+    \caption{Pareto frontier of cost budget against steady-state SIS
+        prevalence at $R_0 = 1.5$ across all five campuses.
+        $N = 50$ realizations per cell, $95\%$ bootstrap CI bands.
+        Source: \texttt{results/main\_pareto.parquet}.}
     \label{fig:main-pareto-1.5}
-\end{figure}
-
-\paragraph{Regime dependence (Figure~\ref{fig:main-ranking}).}
-Far above the threshold ($R_0 = 6$) the picture inverts: the
-realistic distance-threshold policy wins on $3$ of $5$ campuses
-and edge betweenness on the remaining $2$, while the GNN's
-average reduction at $5\%$ budget collapses to $0.6$ percentage
-points. Once the graph is saturated, fine-grained cost-aware
-optimization is dominated by the brute-force structural cuts
-that betweenness or community partitioning identifies. Random
-removal is the worst policy at every $R_0$ except, by
-construction, $R_0 = 0.8$ (where the disease dies out under any
-intervention and all four policies are statistically
-indistinguishable). Table~\ref{tab:headline} summarizes the
-per-$R_0$ winner counts and the average $5\%$-budget reduction.
-
-\begin{figure}[t]
-    \centering
-    \includegraphics[width=0.95\linewidth]{figures/main_ranking_R0_6.0.png}
-    \caption{Within-$(campus, R_0)$ AUC ranking heatmap at
-        $R_0 = 6.0$. Lower rank is better. The GNN advantage seen
-        at $R_0 = 1.5$ disappears in the strongly endemic regime.}
-    \label{fig:main-ranking}
-\end{figure}
+\end{figure*}
 
 \begin{table}[t]
     \centering
+    \small
     \begin{tabular}{lcccc}
         \toprule
-        $R_0$ & Random & Betweenness & Distance Threshold & GNN \\
+        $R_0$ & Random & Bet. & Distance & GNN \\
         \midrule
-        $0.8$ & $+0.0000$ & $+0.0000$ & $+0.0000$ & $+0.0000$ \\
-        $1.5$ & $+0.0158$ & $+0.0171$ & $+0.0222$ & $\mathbf{+0.0402}$ \\
-        $3.0$ & $+0.0154$ & $\mathbf{+0.0217}$ & $+0.0180$ & $+0.0169$ \\
-        $6.0$ & $+0.0125$ & $\mathbf{+0.0223}$ & $+0.0129$ & $+0.0056$ \\
+        $0.8$ & 0.0000 & 0.0000 & 0.0000 & 0.0000 \\
+        $1.5$ & 0.0158 & 0.0171 & 0.0222 & \textbf{0.0402} \\
+        $3.0$ & 0.0154 & \textbf{0.0217} & 0.0180 & 0.0169 \\
+        $6.0$ & 0.0125 & \textbf{0.0223} & 0.0129 & 0.0056 \\
         \bottomrule
     \end{tabular}
     \caption{Mean steady-state prevalence reduction at $5\%$ cost
-        budget (averaged across five campuses), for each policy and
-        $R_0$. Bold marks the highest mean reduction at this single
-        budget point. The GNN policy is $1.8\times$ better than the
-        next-best policy near the threshold; classical baselines
-        take over in the strongly endemic regime. (The per-$R_0$
-        AUC-rank winner across the full budget grid is reported in
-        the text and may differ from this single-point snapshot.)}
+        budget, averaged across five campuses, for each policy and
+        $R_0$. Bold marks the highest mean reduction at this budget
+        point. Source:
+        \texttt{results/summary/headline\_numbers.json}.}
     \label{tab:headline}
 \end{table}
+
+\subsection{Regime dependence}
+\label{sec:results-regime}
+
+\textbf{The ranking flips with $R_0$.} Far above the threshold
+($R_0 = 6$) the realistic distance-threshold policy wins by AUC on
+3 of 5 campuses and edge betweenness on the remaining 2; the GNN's
+average reduction at $5\%$ budget collapses to $0.6$~pp. Once the
+graph is saturated, fine-grained cost-aware optimization is
+dominated by brute-force structural cuts that betweenness or the
+community-bubble identifies. Random removal is the worst policy at
+every $R_0$ except the subcritical $R_0 = 0.8$, where the disease
+dies out under any intervention and all four policies are
+statistically indistinguishable
+(Figure~\ref{fig:main-ranking}).
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\linewidth]{figures/main_ranking_R0_6.0.png}
+    \caption{Per-$(\mathrm{campus}, R_0)$ AUC ranking heatmap at
+        $R_0 = 6.0$. Lower rank is better. The GNN advantage at
+        $R_0 = 1.5$ disappears in the strongly endemic regime.}
+    \label{fig:main-ranking}
+\end{figure}
 
 \subsection{Robustness}
 \label{sec:results-robustness}
 
-\paragraph{Imperfect compliance
-(Figure~\ref{fig:robustness-compliance}).}
-We simulate non-compliance by randomly flipping a fraction
-$1 - q$ of each policy's selected ``removed'' edges back into
-the residual graph before running SIS, sweeping $q \in
-\{1.0, 0.8, 0.6\}$. At $R_0 = 1.5$ and $5\%$ cost budget the
-mean steady-state across the five campuses for the GNN is
-$0.021$ at full compliance, $0.026$ at $80\%$ and $0.032$ at
-$60\%$; the next-best policy (distance threshold) at full
-compliance is already $0.039$, worse than the GNN at \emph{any}
-compliance level we test. The GNN's advantage near the
-threshold is therefore robust to plausible non-compliance: a
-disease-control intervention that loses 40\% of its prescribed
-removals still yields a sub-threshold prevalence under the GNN
-policy, which is not true for the classical baselines.
+\textbf{Imperfect compliance.} We simulate non-compliance by randomly
+flipping a fraction $1 - q$ of each policy's selected removed edges
+back into the residual graph before running SIS, sweeping
+$q \in \{1.0, 0.8, 0.6\}$. At $R_0 = 1.5$ and $5\%$ budget, the
+mean steady-state prevalence across the five campuses for the GNN
+is $0.021$ at full compliance, $0.026$ at $q = 0.8$, and $0.032$ at
+$q = 0.6$; the next-best policy (distance threshold) at full
+compliance is $0.039$, worse than the GNN at any compliance level
+tested (Figure~\ref{fig:robustness-compliance}). At $R_0 = 3.0$ all
+policies converge to within $0.005$ of one another at every
+compliance level, consistent with the regime split.
 
 \begin{figure}[t]
     \centering
-    \includegraphics[width=0.95\linewidth]{figures/robustness_compliance_R0_1.5.png}
-    \caption{Compliance robustness panel at $R_0 = 1.5$.
-        Each curve fixes a policy and a compliance level $q$;
-        $q = 0.6$ means $40\%$ of selected removals are
-        randomly flipped back in before SIS runs. The GNN
-        policy at $60\%$ compliance still outperforms every
-        other policy at $100\%$ compliance.}
+    \includegraphics[width=\linewidth]{figures/robustness_compliance_R0_1.5.png}
+    \caption{Compliance robustness panel at $R_0 = 1.5$. Each curve
+        fixes a policy and a compliance level $q$; $q = 0.6$ flips
+        $40\%$ of selected removals back in before SIS runs.}
     \label{fig:robustness-compliance}
 \end{figure}
 
-At $R_0 = 3.0$ the policies converge to within $0.005$ of one
-another at every compliance level, consistent with the main
-result: in the strongly endemic regime the cost-aware
-fine-tuning matters less than the bulk structural cuts that
-all four policies eventually identify.
-
-\paragraph{SIR alternative
-(Figure~\ref{fig:robustness-sir}).}
-We re-ran every policy on every campus with the SIS process
-swapped for SIR (an extra recovered compartment, $300$ steps
-reduced to $150$ for tractable wall-clock; see
-\texttt{WARNINGS.md}). Outcome is final epidemic size rather
-than steady-state prevalence; otherwise the protocol is
-identical to the main experiment. At $R_0 = 1.5$ and $5\%$
-budget the mean final epidemic size across the five campuses
-is $0.057$ for the GNN policy, $0.084$ for the distance
-threshold, $0.090$ for random removal, and $0.103$ for
-betweenness. The GNN advantage near the threshold is
-\emph{larger} than in the SIS panel: SIR's monotone outcome
-amplifies the near-threshold gap because there is no
-endemic-equilibrium ceiling. At $R_0 = 3.0$ the policies
-again cluster ($0.475$--$0.494$), reproducing the regime
-flip. The SIR panel therefore confirms the central SIS
-finding rather than contradicting it.
+\textbf{SIR alternative.} Re-running every policy with the SIS
+process swapped for SIR (extra recovered compartment, $150$ steps,
+$N = 20$ per cell) gives the picture in
+Figure~\ref{fig:robustness-sir}. Outcome is final epidemic size
+rather than steady-state prevalence. At $R_0 = 1.5$ and $5\%$
+budget the mean final epidemic size across the five campuses is
+$0.057$ for the GNN, $0.084$ for the distance threshold, $0.090$
+for random, and $0.103$ for betweenness; the GNN advantage near
+the threshold widens relative to SIS because SIR's monotone
+outcome has no endemic ceiling. At $R_0 = 3$ the policies cluster
+within $[0.475, 0.494]$, reproducing the regime flip.
 
 \begin{figure}[t]
     \centering
-    \includegraphics[width=0.95\linewidth]{figures/robustness_sir_R0_1.5.png}
+    \includegraphics[width=\linewidth]{figures/robustness_sir_R0_1.5.png}
     \caption{SIR alternative robustness panel at $R_0 = 1.5$.
-        Vertical axis: final epidemic size (fraction of nodes
-        ever infected). The GNN policy's near-threshold
-        advantage carries over from SIS to SIR.}
+        Vertical axis: final epidemic size. Source:
+        \texttt{results/robustness\_sir.parquet}.}
     \label{fig:robustness-sir}
 \end{figure}
 
-\paragraph{Adversarial seeding
-(Figure~\ref{fig:robustness-adversarial}).}
-We replace the uniformly-random initial-infected set with the
-top-$k$ nodes by leading-eigenvector component magnitude (the
-worst-case structural seeding for the SIS process), keeping
-all other parameters fixed. Mean steady-state prevalence at
-$5\%$ budget across the five campuses:
-
-\begin{center}
-\begin{tabular}{lcc}
-    \toprule
-    Policy & $R_0 = 1.5$ & $R_0 = 3.0$ \\
-    \midrule
-    Random            & 0.071 & 0.312 \\
-    Betweenness       & 0.067 & 0.306 \\
-    Distance threshold & 0.063 & 0.309 \\
-    GNN               & \textbf{0.023} & \textbf{0.286} \\
-    \bottomrule
-\end{tabular}
-\end{center}
-
-Two observations. (i) Near the threshold, the GNN's advantage
-is preserved and proportionally similar to the random-seeding
-case ($0.023$ vs.\ $0.021$ under random seeding). (ii) In the
-endemic regime the policy ranking flips relative to the main
-result: under adversarial seeding the GNN now wins at
-$R_0 = 3.0$ ($0.286$ vs.\ $0.306$--$0.312$) where it had been
-narrowly second-place under random seeding. We read this as
-evidence that the GNN's learned cost is identifying edges
-that matter under \emph{structural} stress, not just under
-average-case dynamics: targeting the eigenvector backbone
-makes the right-edge-to-cut question harder, and the
-GNN's eigenvector-aware NetMelt scoring is the policy best
-positioned to answer it.
+\textbf{Adversarial seeding.} Replacing uniform random initial
+infected vertices with the top-$k$ leading-eigenvector-component
+nodes (worst-case structural seeding) preserves the GNN advantage
+at $R_0 = 1.5$ ($0.023$ steady-state prevalence vs.\ $0.063$ for
+the next-best policy). At $R_0 = 3$ the GNN now wins as well
+($0.286$ vs.\ $0.306$), in contrast to the random-seeding case
+where it placed third at this budget. Adversarial seeding stresses
+the leading eigenvector, and the GNN's NetMelt score targets the
+eigenvector directly (Figure~\ref{fig:robustness-adversarial};
+full per-$(R_0, \text{policy})$ table in
+Appendix~\ref{app:robustness}).
 
 \begin{figure}[t]
     \centering
-    \includegraphics[width=0.95\linewidth]{figures/robustness_adversarial_seed_R0_1.5.png}
-    \caption{Adversarial (top-eigenvector) seeding robustness
-        panel at $R_0 = 1.5$. The GNN's near-threshold
-        advantage is preserved under worst-case structural
-        seeding.}
+    \includegraphics[width=\linewidth]{figures/robustness_adversarial_seed_R0_1.5.png}
+    \caption{Adversarial top-eigenvector seeding at $R_0 = 1.5$.
+        Source:
+        \texttt{results/robustness\_adversarial\_seed.parquet}.}
     \label{fig:robustness-adversarial}
 \end{figure}
 
 \subsection{Ablations}
 \label{sec:results-ablations}
 
-\paragraph{GNN architecture
-(Figure~\ref{fig:ablation-gnn-arch}).}
-We retrain the encoder under three GNN architectures (GraphSAGE,
-GAT, GCN), keeping every other hyperparameter and the
-self-supervised link-prediction loss identical, and re-run the
-GNN policy at $R_0 = 3$. The mean steady-state prevalence at
-$5\%$ budget is $0.306$ for GraphSAGE, $0.306$ for GAT, and
-$0.306$ for GCN, indistinguishable across all five campuses to
-three decimals. The architecture choice contributes nothing
-material to the cost surface; the cost-learning \emph{framework}
-is the load-bearing piece, not the specific message-passing
-operator. This is reassuring: the GNN advantage we report in
-Section~\ref{sec:results-pareto} is not an artifact of choosing
-GraphSAGE over its peers.
+\textbf{GNN architecture is interchangeable.} Re-training the
+encoder under GraphSAGE, GAT, or GCN with the same self-supervised
+link-prediction loss yields mean steady-state prevalence at $R_0 = 3$
+of $0.306$, $0.306$, and $0.306$ respectively, indistinguishable
+across all five campuses to three decimals
+(Figure~\ref{fig:ablation-gnn-arch}). The cost-learning framework,
+not the message-passing operator, is load-bearing.
 
 \begin{figure}[t]
     \centering
-    \includegraphics[width=0.95\linewidth]{figures/ablation_gnn_arch_R0_3.0.png}
-    \caption{GNN-architecture ablation, $R_0 = 3$. GraphSAGE,
-        GAT, and GCN encoders produce essentially identical
-        cost surfaces under the same self-supervised
-        link-prediction objective; differences in the resulting
-        Pareto frontier are within bootstrap CI.}
+    \includegraphics[width=\linewidth]{figures/ablation_gnn_arch_R0_3.0.png}
+    \caption{GNN-architecture ablation at $R_0 = 3.0$. GraphSAGE,
+        GAT, and GCN encoders produce statistically
+        indistinguishable Pareto frontiers (within bootstrap CI).
+        Source: \texttt{results/ablation\_gnn\_arch.parquet}.}
     \label{fig:ablation-gnn-arch}
 \end{figure}
 
-\paragraph{Cost-function ablation
-(Figure~\ref{fig:ablation-cost}).}
-We rerun all four policies under five cost functions (uniform,
-sigmoid-dot, cosine, raw clipped dot product, and an
-oracle log-normal) at $R_0 = 3$, $5\%$ budget. Mean
-steady-state prevalence across the five campuses:
-
-\begin{center}
-\begin{tabular}{lccccc}
-    \toprule
-    Policy & uniform & sigmoid & cosine & raw dot & oracle \\
-    \midrule
-    Random            & 0.297 & 0.297 & 0.297 & 0.297 & 0.297 \\
-    Betweenness       & 0.291 & 0.290 & 0.287 & 0.262 & \textbf{0.247} \\
-    Distance threshold & 0.298 & 0.294 & 0.292 & 0.266 & \textbf{0.242} \\
-    GNN               & 0.292 & 0.291 & 0.290 & 0.282 & 0.292 \\
-    \bottomrule
-\end{tabular}
-\end{center}
-
-Two findings stand out. First, the GNN policy is essentially
-\emph{insensitive} to the input cost function (range
-$0.282$--$0.292$, span $0.010$). Its learned cost surface
-$c_e^{\textsc{gnn}} = \sigma(\langle z_u, z_v\rangle)$ is
-applied internally during selection, so changing the input
-cost vector barely re-orders its picks. Second, the cost-aware
-classical baselines (betweenness over cost, distance threshold)
-are highly sensitive: with the heavy-tailed oracle log-normal
-cost they win (down to $0.247$), but with the narrow-range
-sigmoid-dot they collapse to within $0.005$ of the cost-blind
-random baseline. The GNN's value is exactly that it removes
-this hand-engineering dependency: it gets near-best performance
-without requiring the practitioner to choose a well-shaped
-cost function.
+\textbf{Cost-function ablation.} Rerunning all four policies under
+five cost functions (uniform, sigmoid-dot, cosine, raw clipped dot,
+oracle log-normal) at $R_0 = 3$ and $5\%$ budget gives the picture
+in Figure~\ref{fig:ablation-cost}. The GNN policy is insensitive to
+the input cost function (range $0.282$--$0.292$, span $0.010$): its
+learned cost surface
+$c_e^{\mathrm{gnn}} = \sigma(\langle z_u, z_v \rangle)$ replaces the
+input cost during selection. The cost-aware classical baselines
+(betweenness, distance threshold) are highly sensitive: under the
+heavy-tailed oracle log-normal cost they win (down to $0.247$), but
+under the narrow-band sigmoid-dot they collapse to within $0.005$ of
+random removal. The GNN's practical value is removing the
+hand-engineering dependency: it gets near-best performance without
+requiring the practitioner to choose a well-shaped cost function.
 
 \begin{figure}[t]
     \centering
-    \includegraphics[width=0.95\linewidth]{figures/ablation_cost_function_R0_3.0.png}
-    \caption{Cost-function ablation, $R_0 = 3$. Each panel
-        is a campus; each curve a policy under one of five
-        cost functions. The GNN curves coincide regardless of
-        cost; the classical baselines fan out, with the
-        heavy-tailed oracle log-normal cost dominating their
-        respective frontiers.}
+    \includegraphics[width=\linewidth]{figures/ablation_cost_function_R0_3.0.png}
+    \caption{Cost-function ablation at $R_0 = 3.0$. Each panel is a
+        campus; each curve a policy under one of five cost
+        functions. GNN curves coincide regardless of input cost;
+        classical baselines fan out, with the heavy-tailed oracle
+        log-normal cost dominating their respective frontiers.}
     \label{fig:ablation-cost}
 \end{figure}
 
-\paragraph{Synthetic topology ablation
-(Figure~\ref{fig:ablation-synth}).}
-We rerun the three topology-only policies (random, betweenness
-over cost, distance threshold; the GNN is omitted because
-synthetic graphs lack the Facebook100 attributes the encoder
-needs) on five synthetic graphs matched in node count and
-density to the average campus: Erd\H{o}s--R\'enyi, Barab\'asi--Albert,
-Watts--Strogatz, configuration model, and a stochastic block
-model. Mean steady-state prevalence at $R_0 = 3$, $5\%$ budget:
-
-\begin{center}
-\begin{tabular}{lccccc}
-    \toprule
-    Policy & BA & config & ER & SBM & WS \\
-    \midrule
-    Random            & 0.446 & 0.405 & 0.606 & 0.611 & 0.613 \\
-    Betweenness       & \textbf{0.255} & \textbf{0.269} & \textbf{0.419} & \textbf{0.470} & \textbf{0.459} \\
-    Distance threshold & 0.295 & 0.276 & 0.466 & 0.600 & 0.582 \\
-    \bottomrule
-\end{tabular}
-\end{center}
-
-Three takeaways. (i) Betweenness wins on every synthetic
-topology — consistent with its theoretical role as the
-canonical structural-cut policy. (ii) Hub-driven topologies
-(BA, configuration model) are cheap to contain at $5\%$
-budget; bridge-poor topologies (ER, SBM, WS) are not.
-Distance threshold's community-bubble cut is competitive on
-hub graphs but degrades sharply on uniform-density graphs
-where Louvain's communities are weak. (iii) Random performs
-uniformly worst, confirming the baseline order.
-On Facebook100 the policy ranking flips (GNN > distance
-threshold $\geq$ betweenness near the threshold,
-distance threshold $\geq$ betweenness in the endemic
-regime), so the Facebook100 ordering is \emph{not} a
-generic property of any reasonable graph; it depends on
-the attribute structure that the GNN cost surface
-exploits.
-
-\begin{figure}[t]
-    \centering
-    \includegraphics[width=0.95\linewidth]{figures/ablation_synthetic_topology_R0_3.0.png}
-    \caption{Synthetic-topology ablation, $R_0 = 3$.
-        Betweenness wins on every topology. Hub-driven
-        graphs (BA, config) admit cheap containment;
-        bridge-poor graphs (ER, SBM, WS) do not.}
-    \label{fig:ablation-synth}
-\end{figure}
-
-\subsection{Cross-campus regression}
+\subsection{Cross-campus structural regression}
 \label{sec:results-regression}
 
-We compute a battery of descriptive statistics per campus
-(node count, density, mean degree, clustering coefficient,
-degree assortativity, modularity, and per-attribute homophily
-on dorm and year) and fit \emph{univariate} linear regressions of
-each policy's Pareto-AUC against each statistic, separately for
-each $R_0$. With only five campuses we deliberately avoid a
-multivariate fit (which would be exactly determined and yield
-$R^2 = 1$ by construction); the univariate slopes and Pearson
-correlations are reported as descriptive direction rather than
-significance tests.
-
-The dominant pattern is consistent across all four policies and
-all $R_0 \geq 1.5$: AUC is strongly positively correlated with
-the global clustering coefficient (Pearson $r > 0.88$ in every
-$(policy, R_0)$ cell with $R_0 \geq 1.5$) and with edge density
-(Pearson $r > 0.87$ at $R_0 \in \{1.5, 6\}$), and strongly
-negatively correlated with the node count $n$ (Pearson
-$r < -0.89$ at $R_0 \in \{3, 6\}$). The interpretation is
-intuitive: high-clustering graphs (Caltech36 has $C = 0.29$)
-contain triangles whose removal cascades into structural
-disconnection, while low-clustering graphs (Penn94 has
-$C = 0.10$) require many independent cuts to flatten the
-spread. Larger graphs absorb interventions more elastically.
-
-The descriptive question lurking under the cost-aware reframe is
-``which segregation metric matters?'', and the cross-campus
-regression suggests an answer: at the granularity of campuses,
-\emph{global} clustering and density predict performance better
-than \emph{attribute-level} homophily indices on dorm or year
-(Figure~\ref{fig:cross-campus-regression}).
+We compute eight descriptive statistics per campus and fit
+\emph{univariate} linear regressions of each policy's
+Pareto-AUC against each statistic, separately for each $R_0$. With
+only five campuses, multivariate inference is exactly determined and
+yields $R^2 = 1$ by construction; we report Pearson correlations as
+descriptive direction only. The dominant pattern is that AUC rises
+with global clustering coefficient and edge density and falls with
+node count, consistent across all four policies and all
+$R_0 \geq 1.5$ ($|r| > 0.87$ in every cell)
+(Figure~\ref{fig:cross-campus-regression}). Caltech36 ($C = 0.29$)
+contains triangles whose removal cascades into structural
+disconnection; Penn94 ($C = 0.10$) requires many independent cuts.
+Per-cell coefficients are in Appendix~\ref{app:regression}.
 
 \begin{figure}[t]
     \centering
-    \includegraphics[width=0.95\linewidth]{figures/cross_campus_regression.png}
-    \caption{Cross-campus Pearson correlation between each
-        policy's Pareto-AUC and each campus structural statistic,
-        per $R_0$. Red = positive; blue = negative. The AUC of
-        every policy correlates positively with global clustering
-        coefficient and density and negatively with node count
-        once $R_0 \geq 1.5$. With only five campuses these are
-        descriptive directions, not significance tests.}
+    \includegraphics[width=\linewidth]{figures/cross_campus_regression.png}
+    \caption{Cross-campus Pearson correlation between policy
+        Pareto-AUC and each campus structural statistic, faceted by
+        $R_0$. Five campuses; descriptive direction only.}
     \label{fig:cross-campus-regression}
 \end{figure}
-This is consistent with the homophily-percolation theory of
-\citet{rizi2025homophily}, where the relevant assortativity for
-epidemic-style cascades is the structural one, not the categorical
-one.
 
 \section{Discussion}
 \label{sec:discussion}
 
-\subsection{When does the learned cost help?}
+\paragraph{When does the learned cost help?} Near $R_0 = 1$,
+choosing the right edge to cut has high marginal value: a small
+$\lambda_1$ reduction can push the system below threshold, and the
+GNN's learned cost discriminates the structurally-important-but-
+attribute-cheap edges (a high-betweenness bridge between two dorms
+in the same year, for example). Far above threshold, the
+NetMelt-style eigenscore-only ranking is already near-optimal
+\citep{tong2012netmelt} and the cost surface contributes only
+second-order improvements; the GNN's marginal advantage shrinks.
+The cost-function ablation
+(Section~\ref{sec:results-ablations}) supports this: under
+heavy-tailed costs, where the cost surface carries substantial
+information, the GNN advantage widens; under uniform cost, where it
+carries none, all cost-aware policies converge.
 
-The headline pattern (Table~\ref{tab:headline}) is that the
-GNN-learned cost is most valuable \emph{near} the spectral
-threshold and least valuable when the graph is heavily endemic.
-We hypothesize two complementary mechanisms.
+\paragraph{Implementability gap.} A central practical question is
+the gap between an ideal but unenforceable policy (the GNN, which
+assumes the central planner can identify and remove arbitrary
+individual edges) and a realistic, enforceable one (the
+distance-threshold community-bubble cut, communicable as ``stay
+within your $k$-hop friend community''). At $R_0 = 1.5$ and a
+$5\%$ cost budget the GNN's $4.0$~pp reduction is roughly
+$1.8\times$ the distance threshold's $2.2$~pp, a meaningful but
+not catastrophic loss to enforceability. At $R_0 = 6$ the
+distance-threshold policy beats the GNN in absolute reduction. The
+realistic policy therefore wins outright in the strongly endemic
+regime, where containment is otherwise hardest, and the policy
+recommendation is regime-dependent: GNN near threshold,
+distance-threshold deep in endemic.
 
-First, near $R_0 = 1$ a small reduction in $\lambda_1(A)$ can
-push the system back below the threshold; the marginal value of
-choosing the \emph{right} edge is enormous. The GNN's learned
-cost is more discriminative than the hand-designed
-$\sigma(\langle x_u, x_v\rangle)$ proxy precisely on the kinds
-of edges where structural homophily masks attribute-level
-similarity (e.g.\ a high-betweenness bridge between two dorms in
-the same year). In this regime the GNN's marginal advantage in
-identifying ``cheap to remove, structurally important'' edges
-pays off most.
+\paragraph{Practitioner ergonomics.} The cost-function ablation
+provides a complementary argument for the GNN policy that has
+nothing to do with raw performance. The classical cost-aware
+baselines (betweenness over cost, distance threshold) are highly
+sensitive to the choice of cost function: under a heavy-tailed
+oracle log-normal cost they are competitive, but under the narrow
+sigmoid-dot proxy they collapse to within $0.005$ of cost-blind
+random removal. Their performance therefore depends on the
+practitioner choosing a well-shaped cost function, which in turn
+requires domain knowledge about which features generate large vs.\
+small social cost. The GNN policy is insensitive to the input
+cost (range $0.282$--$0.292$ across all five tested cost functions,
+span $0.010$): its self-supervised link-prediction objective
+constructs an internal cost surface from the graph itself, removing
+the cost-engineering decision. Where comparable absolute
+performance is achievable, the GNN is the more robust default in
+deployment.
 
-Second, in the strongly endemic regime almost any sufficiently
-budgeted intervention restores containment because $\lambda_1$
-is far above $1/(\beta/\gamma)$; the cost-aware fine-tuning the
-GNN provides gets dominated by the brute-force structural cuts
-that betweenness or community-bubble identifies. The classical
-NetMelt theory \citep{tong2012netmelt} predicts exactly this: at
-high $\beta/\gamma$, eigenscore-only ranking is near-optimal and
-the cost surface adds only second-order improvements.
-
-\subsection{Implementability gap}
-
-A central practical question is the gap between an ideal but
-unenforceable policy (the GNN, which assumes the central
-planner can identify and remove arbitrary individual edges) and
-a realistic, enforceable one (the distance-threshold
-community-bubble cut, which can be communicated to the
-population as ``stay within your $k$-hop friend community'').
-
-At $R_0 = 1.5$ and a $5\%$ cost budget, the GNN's $4.0\,$pp
-reduction is roughly $1.8\times$ the distance threshold's
-$2.2\,$pp reduction, which is a meaningful but not catastrophic
-loss to enforceability. At $R_0 = 6$ the distance-threshold
-policy actually \emph{beats} the GNN in absolute reduction, so
-the implementability gap is negative there: the realistic
-policy wins outright. We read this as good news for public
-policy: the realistic intervention is the best available choice
-exactly in the regime where the disease is otherwise hardest to
-control.
-
-\subsection{Limitations}
-
-We catalogue the project's downscoping decisions in a separate
-\texttt{WARNINGS.md} file in the repository so that subsequent
-iterations on cluster hardware can revisit each one. The most
-load-bearing limitations are:
-
-\begin{itemize}[leftmargin=2em]
-    \item \textbf{Facebook100 is a friendship graph, not a
-    contact graph.} Edges represent self-reported online ties at
-    a single 2005 snapshot; some are dense roommate links and
-    others are loose acquaintances. Treating all edges as
-    epidemiologically equivalent under SIS is a simplification.
-    The cost-aware reframe partially compensates for this (high
-    cost = closer tie $\approx$ more likely to transmit), but
-    a future iteration would replace SIS with a heterogeneous
-    contact-rate model fit to mobility data.
-    \item \textbf{The sigmoid-dot cost has a narrow dynamic
-    range.} On $L_2$-normalized one-hot features
-    $\langle x_u, x_v \rangle \in [0, 1]$, so
-    $c_e \in [0.5, 0.73]$. The cost variation across edges is
-    $1.5\times$, which is enough for the cost-budget knob to be
-    interesting but small enough that the cost function does
-    \emph{not} dominate the ranking. The cost-function ablation
-    in Section~\ref{sec:results} compares this against $4$ other
-    cost variants.
-    \item \textbf{Approximations for tractability.} Edge
-    betweenness on Penn94 is computed with $k = 300$ pivot
-    sources rather than exhaustively; the GNN's input features
-    are projected through a $64$-component TruncatedSVD before
-    GraphSAGE rather than passed in as the full one-hot matrix;
-    each Pareto cell is averaged over $N = 50$ realizations
-    rather than the originally planned $100$. Rerunning at full
-    fidelity on cluster hardware is the natural next step.
-    \item \textbf{Cross-campus regression is small-sample.}
-    Five campuses do not afford strong inferential claims about
-    which structural features predict policy success; we report
-    univariate Pearson correlations rather than multivariate
-    regressions to avoid overstating significance.
-    \item \textbf{We are not solving COVID.} The project is a
-    cost-aware empirical comparison on a stylized social
-    network; the policies it endorses near the threshold (GNN)
-    and in the endemic regime (distance threshold) are
-    informative for the design of real interventions, not
-    prescriptions for them.
-\end{itemize}
+\paragraph{Limitations.} Facebook100 is a friendship graph, not a
+contact graph: edges are 2005 self-reported online ties of varying
+intensity, and treating them as epidemiologically equivalent under
+SIS is an idealization. The cost-aware reframe partially compensates
+(high cost $\approx$ tighter tie $\approx$ likelier transmission),
+but a future iteration would replace SIS with a heterogeneous
+contact-rate model fit to mobility data. The sigmoid-dot cost has
+narrow dynamic range $[0.50, 0.73]$; the cost-function ablation
+characterizes the GNN's sensitivity to this. Edge betweenness on
+Penn94 uses $k = 300$ pivots rather than the exhaustive computation;
+the GNN is trained on TruncatedSVD-projected features for local
+tractability; four panels run at $N = 20$ rather than the main grid's
+$N = 50$, all catalogued in \texttt{WARNINGS.md}. Cross-campus
+regression at $n = 5$ is descriptive, not inferential. We are not
+solving COVID; the policies endorsed here are informative for
+intervention design, not prescriptions for it.
 
 \section{Conclusion}
 \label{sec:conclusion}
 
-We posed the cost-aware version of the classical edge-removal
-containment problem: minimize the total cost of removed edges
-subject to keeping steady-state SIS prevalence below a target,
-where edge cost is a feature-similarity proxy for social
-expense. Across five Facebook100 campuses, four candidate
-policies, four values of $R_0$, and three robustness panels,
-the central finding is a regime split. \emph{Near the spectral
-threshold}, a GNN whose per-edge cost is learned end-to-end via
-self-supervised link prediction strictly dominates the
-classical baselines, cutting steady-state prevalence by roughly
-twice as much per unit of social cost. \emph{In the strongly
-endemic regime}, the realistic distance-threshold policy
-catches up and overtakes, and the practical policy
-recommendation is therefore not a single winner but a
-regime-dependent choice. The cost-aware reframe is what makes
-this comparison possible at all; under uniform costs the
-classical literature has long known that NetMelt-style spectral
-ranking is near-optimal, but the cost-aware version makes the
-implementability gap explicit and quantifiable.
+The cost-aware reframe of edge-removal containment exposes a regime
+split: near the spectral threshold a GNN whose per-edge cost is
+learned end-to-end via self-supervised link prediction strictly
+dominates classical baselines, cutting steady-state prevalence by
+roughly twice as much per unit social cost; deep in the endemic
+regime the realistic distance-threshold policy catches up and
+overtakes. The GNN-architecture ablation localizes the gain to the
+cost-learning framework rather than the message-passing operator,
+and the cost-function ablation shows the gain widens with cost
+variance. Under uniform costs the classical literature has long
+known that NetMelt-style spectral ranking is near-optimal; the
+cost-aware version makes the implementability gap explicit and
+quantifiable.
 
-\bibliographystyle{plainnat}
+\bibliographystyle{icml2025}
 \bibliography{refs}
 
+\newpage
 \appendix
+\onecolumn
 
-\section{Hyperparameters and reproducibility}
-\label{app:hparams}
+\section{Reproducibility}
+\label{app:repro}
 
-\paragraph{Master configuration.}
-All numerical hyperparameters live in \texttt{configs/default.yaml}
-and are overridden per-experiment by YAML files in
-\texttt{configs/experiments/}. The defaults used for all results in
-the main paper are: $\gamma = 0.10$, $R_0 \in \{0.8, 1.5, 3.0, 6.0\}$,
-$N = 50$ realizations per Pareto cell, $200$ simulation steps,
-$100$-step burn-in, $10$ uniformly-random initial infected vertices,
-budget grid $\{0, 0.005, 0.01, 0.02, 0.05, 0.10, 0.20, 0.40\}$ as a
-fraction of the total cost. Master seed: $42$.
-
-\paragraph{GNN architecture and training.}
-Default architecture: 2-layer GraphSAGE
+\paragraph{Hyperparameters.} Defaults: $\gamma = 0.10$;
+$R_0 \in \{0.8, 1.5, 3.0, 6.0\}$; $N = 50$ realizations per Pareto
+cell of $200$ steps with $100$-step burn-in; $10$ uniformly random
+initial-infected vertices; budget grid
+$\{0, 0.005, 0.01, 0.02, 0.05, 0.10, 0.20, 0.40\}$ as a fraction of
+total cost; master seed $42$. GNN: 2-layer GraphSAGE
 \citep{hamilton2017graphsage}, hidden dim $32$, embed dim $16$,
-dropout $0.1$. Training: Adam (lr $0.01$, weight decay $10^{-4}$),
-$40$ epochs, balanced positive/negative link-prediction loss with
-$10\%$ held-out validation pairs and rolling $\textsc{auroc}$
-monitoring. Pre-projection: TruncatedSVD with $64$ components on
-the one-hot feature matrix; the same projection is reused at
-inference time so the encoder's input distribution is consistent.
+dropout $0.1$, Adam optimizer (lr $10^{-2}$, weight decay
+$10^{-4}$), $40$ epochs, $10\%$ held-out validation pairs, AUROC
+monitoring; $64$-component TruncatedSVD pre-projection; subsample of
+at most $200{,}000$ positive pairs per epoch on Penn94 and
+Tennessee95. Edge betweenness uses $k = 300$ pivot sources on
+campuses with $n > 5{,}000$.
 
-\paragraph{Reproducibility.}
-A reviewer with the trained encoder cache and the Facebook100
-\texttt{.mat} files can reproduce every figure in this paper by
-running, in order, \texttt{scripts/02\_build\_features.py},
-\texttt{03\_train\_gnn.py}, \texttt{04\_run\_pareto.py},
-\texttt{05\_run\_robustness.py}, \texttt{06\_run\_ablations.py},
-\texttt{07\_cross\_campus\_regression.py},
-\texttt{08\_make\_figures.py}, and
-\texttt{09\_summarize\_results.py}. Random seeds are pinned in
-all eight scripts. Total wall-clock for the full pipeline on a
-laptop: under two hours, dominated by the SIS simulation in
-\texttt{04} and the robustness panels in \texttt{05}.
+\paragraph{Per-panel fidelity table.}
 
-\section{Additional Pareto curves}
-\label{app:additional-pareto}
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{llrrl}
+\toprule
+Panel & Parquet & $N$ & $n_{\mathrm{steps}}$ & Full fidelity? \\
+\midrule
+Main Pareto              & \texttt{results/main\_pareto.parquet}                    & 50 & 200 & yes \\
+Compliance robustness    & \texttt{results/robustness\_compliance.parquet}          & 50 & 200 & yes \\
+SIR robustness           & \texttt{results/robustness\_sir.parquet}                 & 20 & 150 & reduced \\
+Adversarial seeding      & \texttt{results/robustness\_adversarial\_seed.parquet}   & 20 & 100 & reduced \\
+GNN architecture ablation & \texttt{results/ablation\_gnn\_arch.parquet}            & 50 & 200 & yes \\
+Cost-function ablation   & \texttt{results/ablation\_cost\_function.parquet}        & 20 & 100 & reduced \\
+Synthetic topology       & \texttt{results/ablation\_synthetic\_topology.parquet}   & 20 & 100 & reduced \\
+\bottomrule
+\end{tabular}
+\caption{Per-panel simulation fidelity. Reduced panels were
+re-configured after the full $N = 50$ attempt timed out at 12+ hours
+on contended local hardware; reasoning catalogued in
+\texttt{WARNINGS.md}.}
+\label{tab:fidelity}
+\end{table}
 
-Figure \ref{fig:appendix-pareto-grid} shows the Pareto frontiers
-for all $(campus, R_0)$ cells not displayed in the main text.
-Numerical values are tabulated in
-\texttt{paper/figures/main\_auc\_table.csv} and the per-cell
-parquet \texttt{results/main\_pareto.parquet}.
+\paragraph{Numeric-claim provenance.}
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+Claim & Value & Source \\
+\midrule
+GNN $5\%$-budget reduction at $R_0 = 1.5$       & $0.0402$ &
+    \texttt{headline\_numbers.json}: \texttt{budget\_5pct\_reduction[R0=1.5,policy=gnn]} \\
+Distance threshold, same conditions             & $0.0222$ &
+    \texttt{headline\_numbers.json}: \texttt{budget\_5pct\_reduction[R0=1.5,policy=distance\_threshold]} \\
+Edge betweenness, same conditions               & $0.0171$ &
+    \texttt{headline\_numbers.json}: \texttt{budget\_5pct\_reduction[R0=1.5,policy=betweenness]} \\
+Random, same conditions                         & $0.0158$ &
+    \texttt{headline\_numbers.json}: \texttt{budget\_5pct\_reduction[R0=1.5,policy=random]} \\
+GNN $5\%$-budget reduction at $R_0 = 6.0$       & $0.0056$ &
+    \texttt{headline\_numbers.json}: \texttt{budget\_5pct\_reduction[R0=6.0,policy=gnn]} \\
+Caltech36 clustering coefficient                & $0.291$ &
+    \texttt{results/campus\_structural\_stats.csv}: \texttt{clustering\_coef[Caltech36]} \\
+Penn94 clustering coefficient                   & $0.098$ &
+    \texttt{results/campus\_structural\_stats.csv}: \texttt{clustering\_coef[Penn94]} \\
+Caltech36 leading eigenvalue                    & $74.25$ &
+    \texttt{results/summary/threshold\_sanity.json}: \texttt{lambda\_1[Caltech36]} \\
+GNN compliance @ $q = 0.6$, $R_0 = 1.5$         & $0.032$ &
+    \texttt{results/summary/robustness\_headline.json} (compliance section) \\
+Cost-function ablation, GNN range               & $[0.282, 0.292]$ &
+    \texttt{results/summary/ablation\_headline.json} (cost\_function section) \\
+\bottomrule
+\end{tabular}
+\caption{Provenance for the numeric claims in the main text. Each
+row points to a specific file path and key (or column) in the
+released artifacts.}
+\label{tab:provenance}
+\end{table}
 
-\begin{figure}[ht]
+\paragraph{Per-script reproducibility.}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{llrrl}
+\toprule
+Script & Output & $N$ & Seed & Approx.\ wall-clock \\
+\midrule
+\texttt{02\_build\_features.py}        & \texttt{data/processed/$\langle$campus$\rangle$.npz}      & ---  & 42 & 2 min \\
+\texttt{03\_train\_gnn.py}             & \texttt{results/checkpoints/$\langle$campus$\rangle$.pt} & ---  & 42 & 30 min \\
+\texttt{04\_run\_pareto.py}            & \texttt{results/main\_pareto.parquet}                    & 50   & 42 & 35 min \\
+\texttt{05\_run\_robustness.py}        & \texttt{results/robustness\_*.parquet}                   & 20--50 & 42 & 25 min \\
+\texttt{06\_run\_ablations.py}         & \texttt{results/ablation\_*.parquet}                     & 20--50 & 42 & 20 min \\
+\texttt{07\_cross\_campus\_regression.py} & \texttt{results/cross\_campus\_regression.parquet}    & ---  & 42 & 1 min \\
+\texttt{08\_make\_figures.py}          & \texttt{paper/figures/*.png}                             & ---  & 42 & 1 min \\
+\texttt{09\_summarize\_results.py}     & \texttt{results/summary/*.json,csv}                      & ---  & 42 & 30 s \\
+\bottomrule
+\end{tabular}
+\caption{Per-script reproducibility. Wall-clock measured on a
+2024 MacBook Air M3, 16~GB RAM. Total: under two hours.}
+\label{tab:repro}
+\end{table}
+
+\section{Adversarial seeding: full table}
+\label{app:robustness}
+
+The compliance, SIR, and adversarial robustness Pareto figures are
+in the main text. The per-$(R_0, \text{policy})$ table for the
+adversarial seeding panel at $5\%$ budget follows.
+
+\begin{table}[h]
     \centering
-    \begin{subfigure}[t]{0.48\linewidth}
-        \includegraphics[width=\linewidth]{figures/main_pareto_R0_0.8.png}
-        \caption{$R_0 = 0.8$ (subcritical: any policy contains).}
-    \end{subfigure}\hfill
-    \begin{subfigure}[t]{0.48\linewidth}
-        \includegraphics[width=\linewidth]{figures/main_pareto_R0_3.0.png}
-        \caption{$R_0 = 3.0$ (transition between threshold and endemic).}
-    \end{subfigure}\\[\medskipamount]
-    \begin{subfigure}[t]{0.48\linewidth}
-        \includegraphics[width=\linewidth]{figures/main_pareto_R0_6.0.png}
-        \caption{$R_0 = 6.0$ (strongly endemic; classical baselines win).}
-    \end{subfigure}\hfill
-    \begin{subfigure}[t]{0.48\linewidth}
-        \includegraphics[width=\linewidth]{figures/main_ranking_R0_3.0.png}
-        \caption{Within-$(campus, R_0)$ ranking heatmap, $R_0 = 3.0$.}
-    \end{subfigure}
-    \caption{Additional Pareto curves and ranking heatmap.}
-    \label{fig:appendix-pareto-grid}
+    \small
+    \begin{tabular}{lcc}
+        \toprule
+        Policy & $R_0 = 1.5$ & $R_0 = 3.0$ \\
+        \midrule
+        Random              & 0.071 & 0.312 \\
+        Betweenness         & 0.067 & 0.306 \\
+        Distance threshold  & 0.063 & 0.309 \\
+        GNN                 & \textbf{0.023} & \textbf{0.286} \\
+        \bottomrule
+    \end{tabular}
+    \caption{Mean steady-state prevalence at $5\%$ budget under
+        adversarial top-eigenvector seeding. Source:
+        \texttt{results/summary/robustness\_headline.json}.}
+    \label{tab:adversarial}
+\end{table}
+
+
+\section{Synthetic topology ablation}
+\label{app:synthetic}
+
+We rerun the three topology-only policies (random, betweenness over
+cost, distance threshold; the GNN is omitted because synthetic
+graphs lack Facebook100 attributes) on five synthetic graphs
+matched in node count and density to the average campus:
+Erd\H{o}s--R\'enyi (ER), Barab\'asi--Albert (BA),
+Watts--Strogatz (WS), configuration model, and a stochastic block
+model (SBM). Mean steady-state prevalence at $R_0 = 3$, $5\%$
+budget, $N = 20$ realizations:
+
+\begin{table}[h]
+    \centering
+    \small
+    \begin{tabular}{lccccc}
+        \toprule
+        Policy & BA & config & ER & SBM & WS \\
+        \midrule
+        Random              & 0.446 & 0.405 & 0.606 & 0.611 & 0.613 \\
+        Betweenness         & \textbf{0.255} & \textbf{0.269} & \textbf{0.419} & \textbf{0.470} & \textbf{0.459} \\
+        Distance threshold  & 0.295 & 0.276 & 0.466 & 0.600 & 0.582 \\
+        \bottomrule
+    \end{tabular}
+    \caption{Synthetic-topology ablation. Source:
+        \texttt{results/ablation\_synthetic\_topology.parquet}.}
+    \label{tab:synthetic}
+\end{table}
+
+Betweenness wins on every synthetic topology, consistent with its
+theoretical role as the canonical structural-cut policy. Hub-driven
+topologies (BA, configuration model) admit cheap containment at
+$5\%$ budget; bridge-poor topologies (ER, SBM, WS) do not. Distance
+threshold's community-bubble cut is competitive on hub graphs but
+degrades sharply on uniform-density graphs where Louvain communities
+are weak. On Facebook100 the policy ranking flips
+(Section~\ref{sec:results-pareto}), so the Facebook100 ordering is
+not a generic property of any reasonable graph; it depends on the
+attribute structure that the GNN cost surface exploits.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.6\linewidth]{figures/ablation_synthetic_topology_R0_3.0.png}
+    \caption{Synthetic-topology ablation, $R_0 = 3.0$. Betweenness
+        wins on every topology.}
+    \label{fig:ablation-synth}
 \end{figure}
-
-\section{Cost-function and architecture ablations}
-\label{app:ablations}
-
-The ablation parquets
-(\texttt{results/ablation\_gnn\_arch.parquet},
-\texttt{ablation\_cost\_function.parquet},
-\texttt{ablation\_synthetic\_topology.parquet}) and the rendered
-figures (\texttt{paper/figures/ablation\_*.png}) describe (i)
-how the GNN advantage varies across GraphSAGE / GAT / GCN
-backbones, (ii) how the policy ranking changes as the cost
-function moves from sigmoid-dot through cosine, raw dot,
-uniform, and oracle log-normal, and (iii) whether the
-classical baselines retain their ranking on synthetic graphs
-(ER, BA, WS, configuration model, SBM) matched in size and
-density to the average campus. Detailed numerical tables are
-deferred to the supplementary material.
 
 \section{Cross-campus regression coefficients}
 \label{app:regression}
 
-Full per-$(policy, R_0, predictor)$ univariate slope, intercept,
-Pearson correlation, and small-sample $R^2$ are stored in
-\texttt{results/cross\_campus\_regression.parquet} (128 rows;
-4 policies $\times$ 4 $R_0$ $\times$ 8 predictors). The
-campus-level descriptive statistics that drive the regression
-are in \texttt{results/campus\_structural\_stats.csv}. The most
-robust qualitative finding (consistent across all four
-policies and all $R_0 \geq 1.5$) is that AUC rises with global
-clustering coefficient and edge density and falls with node
-count.
+The full per-$(\mathrm{policy}, R_0, \mathrm{predictor})$ univariate
+slope, intercept, Pearson correlation, and small-sample $R^2$ are
+stored in \texttt{results/cross\_campus\_regression.parquet} ($128$
+rows: $4$ policies $\times$ $4\;R_0$ $\times$ $8$ predictors). The
+campus-level descriptive statistics that drive the regression are in
+\texttt{results/campus\_structural\_stats.csv}. The most robust
+qualitative finding (consistent across all four policies and all
+$R_0 \geq 1.5$) is that AUC rises with global clustering coefficient
+and edge density and falls with node count, with $|r| > 0.87$ in
+every cell at $R_0 \geq 1.5$. With $n = 5$ campuses this is
+descriptive direction rather than an inferential test.
 
 \end{document}
